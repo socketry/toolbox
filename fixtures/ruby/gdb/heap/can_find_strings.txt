@@ -1,0 +1,13 @@
+Scanning heap for type 0x..., limit=5...
+
+Found 5 object(s):
+
+  [0] $heap0 = <T_STRING@...> '...'
+  [1] $heap1 = <T_STRING@...> '...'
+  [2] $heap2 = <T_STRING@...> '...'
+  [3] $heap3 = <T_STRING@...> '...'
+  [4] $heap4 = <T_STRING@...> '...'
+
+Objects saved in $heap0 through $heap4
+Next scan address saved to $heap: 0x...
+Run '...' for next page

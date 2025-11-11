@@ -1,0 +1,3 @@
+<T_ARRAY@...>
+[   0] I: <T_BIGNUM@...>
+[   1] I: <T_BIGNUM@...>

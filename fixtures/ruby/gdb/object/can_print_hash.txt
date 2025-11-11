@@ -1,0 +1,7 @@
+<T_HASH@...>
+[   0] K: <T_SYMBOL> :a
+       V: <T_FIXNUM> 1
+[   1] K: <T_SYMBOL> :b
+       V: <T_FIXNUM> 2
+[   2] K: <T_SYMBOL> :c
+       V: <T_FIXNUM> 3

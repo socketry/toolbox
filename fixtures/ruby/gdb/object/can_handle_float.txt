@@ -1,0 +1,4 @@
+<T_ARRAY@...>
+[   0] I: <T_FLOAT> 3.14
+[   1] I: <T_FLOAT> -2.718
+[   2] I: <T_FLOAT> 0.0
