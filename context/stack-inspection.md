@@ -51,66 +51,38 @@ See the current Ruby control frame:
 (gdb) p $cfp->ep       # Environment pointer
 ~~~
 
-### VM Stack for a Fiber
+### Combined Stack Trace
 
-Show detailed VM stack information:
-
-~~~
-(gdb) rb-fiber-vm-stack 5
-VM Stack for Fiber #5:
-  Base: 0x7f8a1c950000
-  Size: 4096 VALUEs (32768 bytes)
-  CFP:  0x7f8a1c951000
-
-Use GDB commands to examine:
-  x/4096gx 0x7f8a1c950000         # Examine as hex values
-  p *((VALUE *)0x7f8a1c950000)@100  # Print first 100 values
-~~~
-
-### Walking Control Frames
-
-See detailed information about each Ruby method call:
+The simplest way to see both Ruby and C frames:
 
 ~~~
-(gdb) rb-fiber-vm-frames 5
-VM Control Frames for Fiber #5:
-  Fiber: 0x7f8a1c800500 (status: SUSPENDED)
-
-Frame #0 (depth 45):
-  CFP Address: 0x7f8a1c951000
-  PC:         0x7f8a1c234500
-  SP:         0x7f8a1c950100
-  EP:         0x7f8a1c950200
-  Self:       0x7f8a1c888888
-  Location:   /app/lib/connection.rb:123
-  Method:     read
-  Frame Type: VM_FRAME_MAGIC_METHOD
-  Stack Depth: 256 slots
-
-Frame #1 (depth 44):
+(gdb) rb-fiber-scan-heap
+(gdb) rb-fiber-scan-switch 5
+(gdb) rb-stack-trace
+Combined Ruby/C backtrace for Fiber #5:
+  [C] fiber_setcontext
+  [R] /app/lib/connection.rb:123:in `read'
+  [C] rb_io_wait_readable
+  [R] /app/lib/connection.rb:89:in `receive'
   ...
 ~~~
 
-This shows the complete Ruby call chain.
+This shows both levels of the call stack in order.
 
-### Values on Stack Top
+### Detailed Frame Information
 
-Inspect the current values being computed:
+For advanced debugging, you can inspect the raw VM frames:
 
 ~~~
-(gdb) rb-fiber-stack-top 5 10
-VM Stack Top for Fiber #5:
+(gdb) set $ec = ruby_current_execution_context_ptr
+(gdb) set $cfp = $ec->cfp
 
-Top 10 VALUE(s) on stack (newest first):
-
-  [ -1] 0x00007f8a1c888888  T_STRING      "data"
-  [ -2] 0x0000000000000015  Fixnum(10)    Fixnum: 10
-  [ -3] 0x00007f8a1c999999  T_HASH        <hash:len=3>
-  [ -4] 0x0000000000000000  Qfalse        Qfalse
-  ...
+# Current frame details:
+(gdb) p $cfp->pc       # Program counter
+(gdb) p $cfp->sp       # Stack pointer  
+(gdb) p $cfp->iseq     # Instruction sequence
+(gdb) p $cfp->ep       # Environment pointer
 ~~~
-
-This is useful for understanding what values are being passed between methods.
 
 ## Inspecting C Stacks
 
@@ -160,15 +132,13 @@ Note: For suspended fibers, this may be incomplete. Use `rb-fiber-switch` for ac
 Identify the exact location in both Ruby and C:
 
 ~~~
-(gdb) rb-fiber-bt 5             # Ruby backtrace
-  45: /app/lib/connection.rb:123:in `read'
-
-(gdb) rb-fiber-switch 5         # Switch to fiber context
-(gdb) bt                        # C backtrace
-#0  fiber_setcontext
-#1  rb_fiber_yield
-#2  rb_io_wait_readable
-#3  rb_io_read
+(gdb) rb-fiber-scan-heap
+(gdb) rb-fiber-scan-switch 5         # Switch to fiber context
+(gdb) rb-stack-trace                 # Combined backtrace
+  [R] /app/lib/connection.rb:123:in `read'
+  [C] rb_fiber_yield
+  [C] rb_io_wait_readable
+  [R] /app/lib/connection.rb:89:in `receive'
 ~~~
 
 This shows the fiber is suspended in `read`, waiting for I/O.
@@ -178,34 +148,26 @@ This shows the fiber is suspended in `read`, waiting for I/O.
 Detect excessive call depth:
 
 ~~~
-(gdb) rb-fiber-vm-frames 5 | grep "Frame #" | wc -l
-134                            # 134 Ruby frames!
-
-(gdb) rb-fiber-vm-frames 5 | grep "Location"
-  Location:   /app/lib/parser.rb:45
-  Location:   /app/lib/parser.rb:45
-  Location:   /app/lib/parser.rb:45
-  ...                          # Same method recursing
+(gdb) rb-fiber-scan-heap
+(gdb) rb-fiber-scan-switch 5
+(gdb) rb-stack-trace | grep "/app/lib/parser.rb:45" | wc -l
+134                            # Same line appearing 134 times!
 ~~~
 
 Identifies a recursion issue in the parser.
 
-### Examining Method Arguments
+### Examining Stack Values
 
-See what was passed to a method:
+See what values are on the current frame's stack:
 
 ~~~
-(gdb) rb-fiber-vm-frames 5
-Frame #0:
-  Stack Depth: 3 slots         # Method has 3 values on stack
+(gdb) rb-fiber-scan-switch 5
+(gdb) set $sp = $ec->cfp->sp
 
-(gdb) rb-fiber-stack-top 5 3
-  [ -1] 0x00007f8a1c888888  T_STRING      "filename.txt"
-  [ -2] 0x00000000000000b5  Fixnum(90)    Fixnum: 90
-  [ -3] 0x00007f8a1c777777  T_HASH        <options>
-
-(gdb) rb-object-print 0x00007f8a1c777777 --depth 2
-AR Table (options hash with mode, encoding, etc.)
+# Print values on stack
+(gdb) rb-object-print *(VALUE*)($sp - 1)  # Top of stack
+(gdb) rb-object-print *(VALUE*)($sp - 2)  # Second value
+(gdb) rb-object-print *(VALUE*)($sp - 3)  # Third value
 ~~~
 
 ### Tracking Fiber Switches
@@ -213,7 +175,7 @@ AR Table (options hash with mode, encoding, etc.)
 See the call stack across fiber boundaries:
 
 ~~~
-(gdb) rb-fiber-switch 5
+(gdb) rb-fiber-scan-switch 5
 (gdb) bt
 #0  fiber_setcontext
 #1  rb_fiber_yield            # Fiber yielded here
@@ -226,53 +188,55 @@ See the call stack across fiber boundaries:
 
 ## Combining VM and C Stacks
 
-For the complete picture, inspect both:
+For the complete picture, use the combined stack trace:
 
 ~~~
-(gdb) rb-fiber-bt 5                    # Ruby perspective
-  45: /app/lib/connection.rb:123:in `read'
-  44: /app/lib/connection.rb:89:in `receive'
-  
-(gdb) rb-fiber-switch 5                # Switch context
-(gdb) bt                               # C perspective  
-#0  fiber_setcontext
-#1  rb_fiber_yield
-#2  rb_io_wait_readable
-#3  rb_io_read
-#4  rb_io_sysread_internal
+(gdb) rb-fiber-scan-switch 5
+(gdb) rb-stack-trace
+Combined Ruby/C backtrace:
+  [R] /app/lib/connection.rb:123:in `read'
+  [C] rb_io_wait_readable
+  [C] rb_io_read
+  [R] /app/lib/connection.rb:89:in `receive'
+  [C] rb_fiber_yield
+  [R] /app/lib/server.rb:56:in `handle_client'
+  ...
 ~~~
 
-This shows:
-- Ruby level: `read` method in connection.rb
-- C level: Suspended in `rb_io_wait_readable`
+Or separately:
 
-The combination reveals the full execution path.
+~~~
+(gdb) rb-stack-trace --values          # Ruby perspective with stack values
+(gdb) bt                               # C perspective only
+~~~
+
+The combined view reveals the full execution path through both Ruby and C code.
 
 ## Best Practices
 
-### Start with Ruby Backtraces
+### Start with Combined Backtraces
 
-Always check Ruby-level backtraces first:
-
-~~~
-(gdb) rb-all-fiber-bt           # Overview of all fibers
-(gdb) rb-fiber-bt 5             # Detailed Ruby backtrace
-~~~
-
-This gives context before diving into C-level details.
-
-### Use Fiber Switching for Accuracy
-
-For the most accurate C stack views, switch to the fiber:
+Always use the combined backtrace first for full context:
 
 ~~~
-(gdb) rb-fiber-switch 5
-(gdb) bt                        # Accurate backtrace
+(gdb) rb-fiber-scan-stack-trace-all    # Overview of all fibers
+(gdb) rb-fiber-scan-switch 5           # Switch to specific fiber
+(gdb) rb-stack-trace                   # Detailed combined backtrace
+~~~
+
+This gives both Ruby and C context immediately.
+
+### Use Fiber Switching for Deep Inspection
+
+For detailed C-level inspection, switch to the fiber and use standard GDB commands:
+
+~~~
+(gdb) rb-fiber-scan-switch 5
+(gdb) bt                        # C backtrace only
 (gdb) frame 2                   # Navigate frames
 (gdb) info args                 # See C function arguments
+(gdb) info locals               # See C local variables
 ~~~
-
-Walking frames manually (`rb-fiber-c-frames`) is best-effort only.
 
 ### Check Frame Types
 
@@ -332,22 +296,21 @@ Focus on SUSPENDED and RESUMED fibers for debugging.
 
 ### Stack Appears Empty
 
-If `rb-fiber-bt` shows no frames:
+If `rb-stack-trace` shows no frames:
 
-1. Check fiber status: `rb-fiber 5`
-2. Verify it's not TERMINATED
-3. Try: `rb-fiber-vm-frames 5` for raw frame data
-4. Use: `rb-fiber-debug-unwind 5` to see saved register state
+1. Ensure you've switched to a fiber: `rb-fiber-scan-switch 5`
+2. Check fiber status in scan output (avoid TERMINATED fibers)
+3. Try C-only backtrace: `bt`
 
 ### C Backtrace Too Short
 
-After `rb-fiber-switch`, if `bt` shows few frames:
+After `rb-fiber-scan-switch`, if `bt` shows few frames:
 
 1. The fiber may be newly created
-2. Check: `rb-fiber-bt 5` for Ruby-level frames
-3. Compare with: `rb-fiber-vm-frames 5` for all VM frames
+2. Use: `rb-stack-trace` for the combined view
+3. The C backtrace only shows where the fiber was suspended
 
-The C backtrace only shows where the fiber was suspended, not the full Ruby call chain.
+The combined `rb-stack-trace` gives the full picture.
 
 ## See Also
 

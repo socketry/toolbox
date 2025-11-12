@@ -57,10 +57,10 @@ This removes the source line from your `~/.gdbinit`.
 
 Ruby GDB provides specialized commands for debugging Ruby at multiple levels:
 
-- **Object Inspection** - View Ruby objects, hashes, arrays, and structs with {ruby Ruby::GDB::object-inspection proper formatting}
-- **Fiber Debugging** - Navigate and inspect fiber state, backtraces, and exceptions
-- **Stack Analysis** - Examine both VM (Ruby) and C (native) stack frames
-- **Heap Navigation** - Scan the Ruby heap to find objects and understand memory usage
+- **Object Inspection** (`rb-object-print`) - View Ruby objects, hashes, arrays, and structs with proper formatting
+- **Fiber Debugging** (`rb-fiber-*`) - Scan heap for fibers, inspect state, and switch contexts
+- **Stack Analysis** (`rb-stack-trace`) - Examine combined VM (Ruby) and C (native) stack frames
+- **Heap Navigation** (`rb-heap-scan`) - Scan the Ruby heap to find objects by type
 
 ## Quick Start
 
@@ -83,8 +83,8 @@ Once stopped, use Ruby debugging commands:
 
 ~~~
 (gdb) rb-object-print $ec->cfp->sp[-1]   # Print top of VM stack
-(gdb) rb-scan-fibers                     # List all fibers
-(gdb) rb-fiber-bt 0                      # Show fiber backtrace
+(gdb) rb-fiber-scan-heap                 # Scan heap for fibers
+(gdb) rb-stack-trace                     # Show combined Ruby/C backtrace
 ~~~
 
 ### Debugging a Core Dump
@@ -95,14 +95,13 @@ When your Ruby program crashes, you can analyze the core dump:
 $ gdb ruby core.dump
 ~~~
 
-Load the Ruby extensions and diagnose the issue:
+Diagnose the issue (extensions load automatically if installed):
 
 ~~~
-(gdb) source ~/.local/share/gdb/ruby/init.gdb
-(gdb) rb-diagnose-exit          # Check for exceptions and signals
-(gdb) rb-scan-fibers           # List all fibers
-(gdb) rb-fiber-bt 0            # Show fiber backtraces
-(gdb) rb-object-print $errinfo # Print exception objects
+(gdb) rb-fiber-scan-heap                 # Scan heap for all fibers
+(gdb) rb-fiber-scan-stack-trace-all      # Show backtraces for all fibers
+(gdb) rb-object-print $ec->errinfo       # Print exception objects
+(gdb) rb-heap-scan --type RUBY_T_HASH    # Find all hashes
 ~~~
 
 ## Common Workflows
@@ -124,11 +123,10 @@ This shows the exception class, message, and any nested structures.
 When working with fibers, you often need to see what each fiber is doing:
 
 ~~~
-(gdb) rb-scan-fibers           # Scan heap for all fibers
-(gdb) rb-all-fiber-bt          # Show backtraces for all fibers
-(gdb) rb-fiber 5               # Inspect specific fiber
-(gdb) rb-fiber-switch 5        # Switch GDB to fiber's stack
-(gdb) bt                       # Now shows fiber's C backtrace
+(gdb) rb-fiber-scan-heap                # Scan heap for all fibers
+(gdb) rb-fiber-scan-stack-trace-all     # Show backtraces for all fibers  
+(gdb) rb-fiber-scan-switch 5            # Switch GDB to fiber #5's context
+(gdb) rb-stack-trace                    # Now shows fiber's combined backtrace
 ~~~
 
 ### Examining Complex Data Structures
@@ -136,8 +134,12 @@ When working with fibers, you often need to see what each fiber is doing:
 Ruby hashes and arrays can contain nested structures:
 
 ~~~
-(gdb) rb-object-print $some_hash --depth 3
-(gdb) rb-object-print $ec->storage --depth 2
+(gdb) rb-object-print $some_hash --depth 2
+<T_HASH@0x7f8a1c999999>
+[   0] K: <T_SYMBOL> :name
+       V: <T_STRING@0x7f8a1c888888> 'Alice'
+[   1] K: <T_SYMBOL> :age
+       V: <T_FIXNUM> 30
 ~~~
 
 The `--depth` flag controls how deep to recurse into nested objects.

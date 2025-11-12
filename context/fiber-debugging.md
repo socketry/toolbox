@@ -22,22 +22,18 @@ The first step in fiber debugging is finding all fibers in the heap.
 Scan the entire Ruby heap for fiber objects:
 
 ~~~
-(gdb) rb-scan-fibers
-Scanning 1250 heap pages...
+(gdb) rb-fiber-scan-heap
+Scanning heap for Fiber objects...
   Checked 45000 objects, found 12 fiber(s)...
-Scan complete: checked 67890 objects
 
 Found 12 fiber(s):
 
-Fiber #0: 0x7f8a1c800000
+Fiber #0: <VALUE:0x7f8a1c800000>
   Status: RESUMED
-  Stack: base=0x7f8a1d000000, size=1048576
-  VM Stack: 0x7f8a1c900000, size=4096
-  CFP: 0x7f8a1c901000
-
-Fiber #1: 0x7f8a1c800100
+  Stack: 0x7f8a1d000000
+  
+Fiber #1: <VALUE:0x7f8a1c800100>
   Status: SUSPENDED
-  Exception: RuntimeError: Connection failed
   ...
 ~~~
 
@@ -46,7 +42,7 @@ Fiber #1: 0x7f8a1c800100
 For large applications, limit the scan:
 
 ~~~
-(gdb) rb-scan-fibers 10    # Find first 10 fibers only
+(gdb) rb-fiber-scan-heap 10    # Find first 10 fibers only
 ~~~
 
 ### Caching Results
@@ -54,63 +50,50 @@ For large applications, limit the scan:
 Cache fiber addresses for faster subsequent access:
 
 ~~~
-(gdb) rb-scan-fibers --cache            # Save to fibers.json
-(gdb) rb-scan-fibers --cache my.json    # Custom cache file
+(gdb) rb-fiber-scan-heap --cache            # Save to fibers.json
+(gdb) rb-fiber-scan-heap --cache my.json    # Custom cache file
 ~~~
 
 Later, load from cache instantly:
 
 ~~~
-(gdb) rb-scan-fibers --cache
-Loaded 12 fiber address(es) from fibers.json
+(gdb) rb-fiber-scan-heap --cache
+Loaded 12 fiber(s) from fibers.json
 ~~~
 
 This is especially useful with core dumps where heap scanning is slow.
 
 ## Inspecting Specific Fibers
 
-After scanning, inspect fibers by index:
+After scanning, you can switch to a specific fiber's context or view all backtraces.
 
-### Fiber Overview
+### View All Fiber Backtraces
+
+See Ruby-level call stacks for all fibers at once:
 
 ~~~
-(gdb) rb-fiber 5
-Fiber #5: 0x7f8a1c800500
+(gdb) rb-fiber-scan-stack-trace-all
+Found 12 fiber(s)
+
+Fiber #0: <VALUE:0x7f8a1c800000>
+  Status: RESUMED
+  [No backtrace - fiber is running]
+
+Fiber #1: <VALUE:0x7f8a1c800100>
   Status: SUSPENDED
+  /app/lib/connection.rb:123:in `read'
+  /app/lib/connection.rb:89:in `receive'
+  /app/lib/server.rb:56:in `handle_client'
+  ...
+
+Fiber #5: <VALUE:0x7f8a1c800500>
+  Status: SUSPENDED  
   Exception: IOError: Connection reset
-  Stack: base=0x7f8a1e000000, size=1048576
-  VM Stack: 0x7f8a1c950000, size=4096
-  CFP: 0x7f8a1c951000
-  EC: 0x7f8a1c800600
-
-Available commands:
-  rb-fiber-bt 5         - Show backtrace
-  rb-fiber-vm-stack 5   - Show VM stack
-  rb-fiber-c-stack 5    - Show C/machine stack info
-~~~
-
-This shows at a glance whether the fiber has an exception and what its state is.
-
-### Fiber Backtraces
-
-See the Ruby-level call stack:
-
-~~~
-(gdb) rb-fiber-bt 5
-Backtrace for fiber 0x7f8a1c800500:
-  45: /app/lib/connection.rb:123:in `read'
-  44: /app/lib/connection.rb:89:in `receive'
-  43: /app/lib/server.rb:56:in `handle_client'
-  42: /app/lib/server.rb:34:in `block in run'
-  41: /gems/async-2.0/lib/async/task.rb:45:in `run'
+  /app/lib/connection.rb:45:in `write'
   ...
 ~~~
 
-Show backtraces for all non-terminated fibers:
-
-~~~
-(gdb) rb-all-fiber-bt
-~~~
+This gives you a complete overview of what every fiber is doing.
 
 ## Switching Fiber Context
 
@@ -119,27 +102,21 @@ The most powerful feature: switch GDB's view to a fiber's stack (even in core du
 ### Basic Usage
 
 ~~~
-(gdb) rb-scan-fibers
-(gdb) rb-fiber-switch 5
-Switched to Fiber #5: 0x7f8a1c800500
+(gdb) rb-fiber-scan-heap
+(gdb) rb-fiber-scan-switch 5
+Switched to Fiber #5
   Status: SUSPENDED
-  Exception: IOError: Connection reset
-
-Convenience variables set:
-  $fiber   = Current fiber (struct rb_fiber_struct *)
-  $ec      = Execution context (rb_execution_context_t *)
-  $errinfo = Exception being handled (VALUE)
-
-Now try:
-  bt          # Show C backtrace of fiber
-  frame <n>   # Switch to frame N
-  info locals # Show local variables
-  rp $errinfo # Pretty print exception
+  
+Now you can use standard GDB commands with this fiber's context:
+  rb-stack-trace      # Show combined backtrace
+  bt                  # Show C backtrace  
+  info locals         # Show C local variables
 ~~~
 
 After switching, all standard GDB commands work with the fiber's context:
 
 ~~~
+(gdb) rb-stack-trace            # Combined Ruby/C backtrace
 (gdb) bt                        # C backtrace of fiber
 #0  0x00007f8a1c567890 in fiber_setcontext
 #1  0x00007f8a1c567900 in rb_fiber_yield
@@ -148,7 +125,14 @@ After switching, all standard GDB commands work with the fiber's context:
 
 (gdb) frame 2
 (gdb) info locals              # Local C variables in that frame
-(gdb) rb-object-print $ec->cfp->sp[-1]  # Ruby values on VM stack
+~~~
+
+### Switching by VALUE
+
+You can also switch to a specific fiber by its VALUE or address:
+
+~~~
+(gdb) rb-fiber-switch 0x7f8a1c800500
 ~~~
 
 ### Switching Back
@@ -156,8 +140,7 @@ After switching, all standard GDB commands work with the fiber's context:
 Return to normal stack view:
 
 ~~~
-(gdb) rb-fiber-switch off
-Fiber unwinder deactivated. Switched back to normal stack view.
+(gdb) rb-fiber-scan-switch off
 ~~~
 
 ## Analyzing Fiber State
@@ -311,27 +294,26 @@ Validation:
 After scanning fibers, use indices for all operations:
 
 ~~~
-(gdb) rb-scan-fibers           # Scan once
-(gdb) rb-fiber 5               # Use index thereafter
-(gdb) rb-fiber-bt 5
-(gdb) rb-fiber-switch 5
+(gdb) rb-fiber-scan-heap           # Scan once
+(gdb) rb-fiber-scan-switch 5       # Switch to fiber #5
+(gdb) rb-stack-trace               # View backtrace
 ~~~
 
 The cache persists throughout your GDB session.
 
-### Check Fiber Status First
+### Check Fiber Status
 
-Before inspecting, check the fiber's status:
+CREATED and TERMINATED fibers may not have valid saved contexts. The scan output shows status:
 
 ~~~
-(gdb) rb-fiber 5
+Fiber #5: <VALUE:0x7f8a1c800500>
   Status: TERMINATED           # Won't have useful context
   
-(gdb) rb-fiber 3
+Fiber #3: <VALUE:0x7f8a1c800300>
   Status: SUSPENDED            # Good candidate for inspection
 ~~~
 
-CREATED and TERMINATED fibers may not have valid saved contexts.
+Focus on SUSPENDED and RESUMED fibers for debugging.
 
 ### Use Convenience Variables
 

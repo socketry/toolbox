@@ -24,24 +24,35 @@ Ruby's heap is organized as:
 
 ## Scanning the Heap
 
-### Finding All Fibers
+### Finding Objects by Type
 
-The most common use case - find every fiber in the application:
+Scan the heap for specific types of Ruby objects:
 
 ~~~
-(gdb) rb-scan-fibers
-Scanning 1250 heap pages...
-  Checked 45000 objects, found 5 fiber(s)...
-  Found fiber #1 at 0x7f8a1c800000
-  Found fiber #2 at 0x7f8a1c800100
+(gdb) rb-heap-scan --type RUBY_T_STRING --limit 10
+Scanning heap for objects of type T_STRING...
+Found 10 objects:
+  Object #0: <VALUE:0x7f8a1c100000> T_STRING
+  Object #1: <VALUE:0x7f8a1c100100> T_STRING
   ...
-Scan complete: checked 67890 objects
+$heap = 0x7f8a1c100900  # Last scanned object (for pagination)
+~~~
+
+### Finding Fibers
+
+Find all fiber objects:
+
+~~~
+(gdb) rb-fiber-scan-heap
+Scanning heap for Fiber objects...
+  Checked 45000 objects, found 12 fiber(s)...
 
 Found 12 fiber(s):
-...
+  Fiber #0: <VALUE:0x7f8a1c800000>
+  ...
 ~~~
 
-This iterates through all heap pages and identifies fiber objects by their type metadata.
+This uses a specialized scanner optimized for fibers.
 
 ### How Heap Scanning Works
 
@@ -50,31 +61,40 @@ The scanner:
 1. Accesses `ruby_current_vm_ptr->gc->objspace`
 2. Iterates through `heap_pages->sorted->data[]`
 3. For each page, checks `total_slots` objects
-4. Identifies objects by their `flags` field
-5. Filters for specific types (e.g., T_DATA with `fiber_data_type`)
+4. Identifies objects by their `flags` field (bits 0-4 = type)
+5. Filters for specific types if `--type` is specified
 
-### Performance Considerations
+### Common Types
 
-Heap scanning can be slow in large applications:
-
-~~~
-Scanning 5000 heap pages...
-  Checked 100000 objects, found 50 fiber(s)...
-  Checked 200000 objects, found 125 fiber(s)...
-  ...
-~~~
-
-Progress updates appear every 10,000 objects. For faster subsequent access, use caching:
+Ruby type constants and their numeric values:
 
 ~~~
-(gdb) rb-scan-fibers --cache
-... (scan happens) ...
-Saved 125 fiber address(es) to fibers.json
+RUBY_T_STRING  = 0x05    # Strings
+RUBY_T_ARRAY   = 0x07    # Arrays  
+RUBY_T_HASH    = 0x08    # Hashes
+RUBY_T_DATA    = 0x0c    # Data objects (like Fibers)
+RUBY_T_OBJECT  = 0x01    # Generic objects
+~~~
 
-# Later (even in a new GDB session):
-(gdb) rb-scan-fibers --cache
-Loaded 125 fiber address(es) from fibers.json
-Successfully reconstructed 125 fiber object(s)
+Examples:
+
+~~~
+(gdb) rb-heap-scan --type RUBY_T_STRING --limit 20
+(gdb) rb-heap-scan --type 0x08 --limit 10  # Same as RUBY_T_HASH
+(gdb) rb-heap-scan --limit 100             # All types
+~~~
+
+### Pagination
+
+Continue scanning from where you left off:
+
+~~~
+(gdb) rb-heap-scan --type RUBY_T_STRING --limit 10
+... (finds 10 strings) ...
+$heap = 0x7f8a1c888888  # Last found object
+
+(gdb) rb-heap-scan --type RUBY_T_STRING --limit 10 --from $heap
+... (finds next 10 strings) ...
 ~~~
 
 ## Understanding Object Layout
@@ -316,12 +336,15 @@ Low utilization indicates fragmentation.
 Don't scan repeatedly in the same session:
 
 ~~~
-(gdb) rb-scan-fibers --cache fibers.json    # Scan once
-(gdb) rb-fiber 5                            # Use cached results
-(gdb) rb-fiber-bt 5
-...
-# Later in session:
-(gdb) rb-fiber 10                           # Still using cache
+(gdb) rb-fiber-scan-heap --cache fibers.json    # Scan once
+(gdb) rb-fiber-scan-switch 5                    # Use cached results
+~~~
+
+Later in the same session, just load the cache:
+
+~~~
+(gdb) rb-fiber-scan-heap --cache                # Instant load
+(gdb) rb-fiber-scan-stack-trace-all             # View all backtraces
 ~~~
 
 ### Limit Scans in Production
@@ -329,22 +352,29 @@ Don't scan repeatedly in the same session:
 For production core dumps with millions of objects:
 
 ~~~
-(gdb) rb-scan-fibers 20         # Find first 20 fibers only
+(gdb) rb-fiber-scan-heap 20             # Find first 20 fibers only
+(gdb) rb-heap-scan --limit 100          # Find first 100 objects of any type
 ~~~
 
-Often you only need a few fibers to diagnose issues.
+Often you only need a few objects to diagnose issues.
 
 ### Use Object Inspection Together
 
 Combine heap scanning with object inspection:
 
 ~~~
-(gdb) rb-scan-fibers
-Fiber #5 has exception: IOError
+(gdb) rb-heap-scan --type RUBY_T_HASH --limit 5
+Scanning heap for objects of type T_HASH...
+Found 5 objects:
+  Object #0: <VALUE:0x7f8a1c999999> T_HASH
+  Object #1: <VALUE:0x7f8a1c999aaa> T_HASH
+  ...
 
-(gdb) rb-fiber 5
-(gdb) set $ec = ...             # (shown in output)
-(gdb) rb-object-print $ec->errinfo --depth 3
+(gdb) rb-object-print 0x7f8a1c999999 --depth 2
+<T_HASH@0x7f8a1c999999>
+[   0] K: <T_SYMBOL> :key
+       V: <T_FIXNUM> 123
+  ...
 ~~~
 
 ## Common Pitfalls
@@ -354,10 +384,9 @@ Fiber #5 has exception: IOError
 If you load a cache from a different core dump:
 
 ~~~
-(gdb) rb-scan-fibers --cache
-Loaded 125 fiber address(es) from fibers.json
+(gdb) rb-fiber-scan-heap --cache
+Loaded fiber addresses from fibers.json
 Warning: Could not access fiber at 0x7f8a1c800500
-Warning: Could not access fiber at 0x7f8a1c800600
 ...
 ~~~
 
@@ -372,7 +401,7 @@ $ rm fibers.json
 If you scan too early during Ruby initialization:
 
 ~~~
-(gdb) rb-scan-fibers
+(gdb) rb-fiber-scan-heap
 Error: ruby_current_vm_ptr is NULL
 Make sure Ruby is fully initialized and the process is running.
 ~~~
@@ -382,7 +411,7 @@ Set a breakpoint after VM initialization:
 ~~~
 (gdb) break rb_vm_exec
 (gdb) run
-(gdb) rb-scan-fibers           # Now works
+(gdb) rb-fiber-scan-heap           # Now works
 ~~~
 
 ### Memory Errors in Core Dumps

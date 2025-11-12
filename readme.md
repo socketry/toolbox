@@ -18,6 +18,14 @@ Please see the [project documentation](https://socketry.github.io/ruby-gdb/) for
 
   - [Heap Debugging](https://socketry.github.io/ruby-gdb/guides/heap-debugging/index) - This guide explains how to navigate Ruby's heap to find objects, diagnose memory issues, and understand object relationships.
 
+## Releases
+
+Please see the [project releases](https://socketry.github.io/ruby-gdb/releases/index) for all releases.
+
+### v0.1.0
+
+  - Initial release.
+
 ## See Also
 
   - [GDB Python API Documentation](https://sourceware.org/gdb/current/onlinedocs/gdb.html/Python-API.html)

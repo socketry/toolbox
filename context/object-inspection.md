@@ -33,10 +33,10 @@ Where:
 Print immediate values and special constants:
 
 ~~~
-(gdb) rb-object-print 0        # Qfalse
-(gdb) rb-object-print 8        # Qnil  
-(gdb) rb-object-print 20       # Qtrue
-(gdb) rb-object-print 85       # Fixnum: 42
+(gdb) rb-object-print 0        # <T_FALSE>
+(gdb) rb-object-print 8        # <T_NIL>
+(gdb) rb-object-print 20       # <T_TRUE>
+(gdb) rb-object-print 85       # <T_FIXNUM> 42
 ~~~
 
 These work without any Ruby process running, making them useful for learning and testing.
@@ -62,26 +62,26 @@ For hashes with fewer than 8 entries, Ruby uses an array-based implementation:
 
 ~~~
 (gdb) rb-object-print $some_hash
-AR Table at 0x7f8a1c123456 (size=4, bound=3):
-  [   0] K: :name
-         V: "Alice"
-  [   1] K: :age  
-         V: Fixnum: 30
-  [   2] K: :active
-         V: Qtrue
+<T_HASH@0x7f8a1c123456>
+[   0] K: <T_SYMBOL> :name
+       V: <T_STRING@0x7f8a1c111111> 'Alice'
+[   1] K: <T_SYMBOL> :age
+       V: <T_FIXNUM> 30
+[   2] K: <T_SYMBOL> :active
+       V: <T_TRUE>
 ~~~
 
 ### Large Hashes (ST Table)
 
-For larger hashes, Ruby uses a hash table:
+For larger hashes, Ruby uses a hash table (output format is similar):
 
 ~~~
 (gdb) rb-object-print $large_hash
-ST Table at 0x7f8a1c789abc (15 entries):
-  [   0] K: :user_id
-         V: Fixnum: 12345
-  [   1] K: :session_data
-         V: <RString>
+<T_HASH@0x7f8a1c789abc>
+[   0] K: <T_SYMBOL> :user_id
+       V: <T_FIXNUM> 12345
+[   1] K: <T_SYMBOL> :session_data
+       V: <T_STRING@0x7f8a1c222222> '...'
   ...
 ~~~
 
@@ -91,37 +91,45 @@ Prevent overwhelming output from deeply nested structures:
 
 ~~~
 (gdb) rb-object-print $nested_hash --depth 1   # Only top level
-(gdb) rb-object-print $nested_hash --depth 2   # One level of nesting
-(gdb) rb-object-print $nested_hash --depth 5   # Deep inspection
+<T_HASH@0x7f8a1c123456>
+[   0] K: <T_SYMBOL> :data
+       V: <T_HASH@0x7f8a1c234567>  # Nested hash not expanded
+
+(gdb) rb-object-print $nested_hash --depth 2   # Expand one level
+<T_HASH@0x7f8a1c123456>
+[   0] K: <T_SYMBOL> :data
+       V: <T_HASH@0x7f8a1c234567>
+       [   0] K: <T_SYMBOL> :nested_key
+              V: <T_STRING@0x7f8a1c345678> 'value'
 ~~~
 
-At depth 1, nested hashes/arrays show as `<RHash>` or `<RArray>`. Increase depth to expand them.
+At depth 1, nested structures show their type and address but aren't expanded. Increase depth to expand them.
 
 ## Inspecting Arrays
 
 Arrays also have two representations based on size:
 
-### Embedded Arrays
+### Arrays
 
-Small arrays (up to 3 elements on 64-bit) are stored inline:
-
-~~~
-(gdb) rb-object-print $small_array
-Embedded Array at 0x7f8a1c234567 (length 3)
-  [   0] I: Fixnum: 1
-  [   1] I: Fixnum: 2
-  [   2] I: Fixnum: 3
-~~~
-
-### Heap Arrays
-
-Larger arrays allocate separate memory:
+Arrays display their elements with type information:
 
 ~~~
-(gdb) rb-object-print $big_array --depth 2
-Heap Array at 0x7f8a1c345678 (length 100)
-  [   0] I: Fixnum: 1
-  [   1] I: "first item"
+(gdb) rb-object-print $array
+<T_ARRAY@0x7f8a1c234567>
+[   0] <T_FIXNUM> 1
+[   1] <T_FIXNUM> 2
+[   2] <T_FIXNUM> 3
+~~~
+
+For arrays with nested objects:
+
+~~~
+(gdb) rb-object-print $array --depth 2
+<T_ARRAY@0x7f8a1c345678>
+[   0] <T_STRING@0x7f8a1c111111> 'first item'
+[   1] <T_HASH@0x7f8a1c222222>
+[   0] K: <T_SYMBOL> :key
+       V: <T_FIXNUM> 123
   ...
 ~~~
 
@@ -131,11 +139,11 @@ Ruby Struct objects work similarly to arrays:
 
 ~~~
 (gdb) rb-object-print $struct_instance
-Heap Struct at 0x7f8a1c456789 (length 4)
-  [   0] I: "John"
-  [   1] I: Fixnum: 25
-  [   2] I: "Engineer"
-  [   3] I: Qtrue
+<T_STRUCT@0x7f8a1c456789>
+[   0] <T_STRING@0x7f8a1c111111> 'John'
+[   1] <T_FIXNUM> 25
+[   2] <T_STRING@0x7f8a1c222222> 'Engineer'
+[   3] <T_TRUE>
 ~~~
 
 ## Practical Examples
@@ -245,11 +253,11 @@ Always verify the address is valid before inspecting.
 
 ### Depth Too Low
 
-If you see `<RHash>` or `<RArray>` where you expected expanded content:
+If you see `<T_HASH@...>` or `<T_ARRAY@...>` without expanded content at depth 1:
 
 ~~~
-(gdb) rb-object-print $hash       # Shows: <RHash>
-(gdb) rb-object-print $hash --depth 2   # Shows actual content
+(gdb) rb-object-print $hash       # Shows: <T_HASH@0x...>
+(gdb) rb-object-print $hash --depth 2   # Shows actual content with keys/values
 ~~~
 
 Increase `--depth` to see nested structures.
