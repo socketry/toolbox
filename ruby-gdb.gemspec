@@ -17,7 +17,7 @@ Gem::Specification.new do |spec|
 		"source_code_uri" => "https://github.com/socketry/ruby-gdb",
 	}
 	
-	spec.files = Dir["{data,lib}/**/*", "*.md", base: __dir__]
+	spec.files = Dir["{bake,context,data,lib}/**/*", "*.md", base: __dir__]
 	
 	spec.required_ruby_version = ">= 3.2"
 end

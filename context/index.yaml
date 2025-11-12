@@ -1,0 +1,28 @@
+# Automatically generated context index for Utopia::Project guides.
+# Do not edit then files in this directory directly, instead edit the guides and then run `bake utopia:project:agent:context:update`.
+---
+description: Ruby debugging extensions for GDB
+metadata:
+  documentation_uri: https://socketry.github.io/ruby-gdb/
+  source_code_uri: https://github.com/socketry/ruby-gdb
+files:
+- path: getting-started.md
+  title: Getting Started
+  description: This guide explains how to install and use Ruby GDB extensions for
+    debugging Ruby programs and core dumps.
+- path: object-inspection.md
+  title: Object Inspection
+  description: This guide explains how to use `rb-object-print` to inspect Ruby objects,
+    hashes, arrays, and structs in GDB.
+- path: stack-inspection.md
+  title: Stack Inspection
+  description: This guide explains how to inspect both Ruby VM stacks and native C
+    stacks when debugging Ruby programs.
+- path: fiber-debugging.md
+  title: Fiber Debugging
+  description: This guide explains how to debug Ruby fibers using GDB, including inspecting
+    fiber state, backtraces, and switching between fiber contexts.
+- path: heap-debugging.md
+  title: Heap Debugging
+  description: This guide explains how to navigate Ruby's heap to find objects, diagnose
+    memory issues, and understand object relationships.

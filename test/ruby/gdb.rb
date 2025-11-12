@@ -17,14 +17,6 @@ describe Ruby::GDB do
 	it "has data path" do
 		expect(File.directory?(Ruby::GDB.data_path)).to be == true
 	end
-	
-	it "has object script" do
-		expect(File.exist?(Ruby::GDB.object_script_path)).to be == true
-	end
-	
-	it "has fiber script" do
-		expect(File.exist?(Ruby::GDB.fiber_script_path)).to be == true
-	end
 end
 
 describe "rb-object-print command" do
@@ -174,19 +166,15 @@ end
 describe "Installation" do
 	include Ruby::GDB::Fixtures
 	
-	it "can determine install path" do
-		path = Ruby::GDB.install_path
+	it "has init script path" do
+		path = Ruby::GDB.init_script_path
 		expect(path).to be_a(String)
-		expect(path).to be =~ /gdb/
+		expect(File.exist?(path)).to be == true
 	end
 	
-	it "supports custom prefix" do
-		path = Ruby::GDB.install_path(prefix: "/usr/local")
-		expect(path).to be == "/usr/local/share/gdb/ruby"
-	end
-	
-	it "provides XDG data home path" do
-		path = Ruby::GDB.xdg_data_home
+	it "has data path" do
+		path = Ruby::GDB.data_path
 		expect(path).to be_a(String)
+		expect(Dir.exist?(path)).to be == true
 	end
 end

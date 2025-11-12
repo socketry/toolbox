@@ -1,3 +1,9 @@
+"""
+Ruby GDB Extensions Initialization
+
+This module loads all Ruby debugging extensions for GDB.
+"""
+
 import gdb
 import os
 import sys
