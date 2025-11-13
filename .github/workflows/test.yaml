@@ -34,7 +34,7 @@ jobs:
       with:
         ruby-version: ${{matrix.ruby}}
         bundler-cache: true
-        apt-get: gdb
+        apt-get: gdb lldb
     
     - name: Run tests
       timeout-minutes: 10

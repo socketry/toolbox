@@ -1,0 +1,11 @@
+Ruby Toolbox loaded for LLDB
+  Extensions: /Users/samuel/Developer/socketry/ruby-gdb/data/toolbox
+✓ Ruby debugging commands loaded:
+  object: rb-object-print
+
+⚠️  Some extensions failed to load (need migration to debugger abstraction):
+  fiber: needs migration from gdb to debugger
+  stack: needs migration from gdb to debugger
+  heap: needs migration from gdb to debugger
+<T_FIXNUM> 42
+

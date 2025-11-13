@@ -16,8 +16,5 @@ module Ruby
 		def self.init_script_path
 			File.join(data_path, "ruby", "gdb", "init.py")
 		end
-		
-		
-		
 	end
 end
