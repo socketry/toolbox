@@ -98,7 +98,7 @@ module Toolbox
 				# Support both old string format and new hash format
 				test_name = test_case.is_a?(Hash) ? test_case[:path] : test_case
 				
-				puts "DEBUG run_test_case: test_name=#{test_name}" if ENV['DEBUG']
+				puts "DEBUG run_test_case: test_name=#{test_name}" if ENV["DEBUG"]
 				
 				gdb_script = "#{test_name}.gdb"
 				ruby_script = "#{test_name}.rb"
@@ -108,24 +108,24 @@ module Toolbox
 				# Check if there's a Ruby script to run with GDB
 				ruby_script_path = File.join(fixtures_dir, ruby_script)
 				if File.exist?(ruby_script_path)
-					puts "DEBUG: Running with Ruby script: #{ruby_script_path}" if ENV['DEBUG']
+					puts "DEBUG: Running with Ruby script: #{ruby_script_path}" if ENV["DEBUG"]
 					# Run Ruby script under GDB
 					result = run_ruby_with_gdb(ruby_script, gdb_script)
 				else
-					puts "DEBUG: Running GDB script only" if ENV['DEBUG']
+					puts "DEBUG: Running GDB script only" if ENV["DEBUG"]
 					# Run GDB script standalone
 					result = run_gdb_script(gdb_script)
 				end
 				
-				puts "DEBUG: result present=#{!result.nil?}, success=#{result && result[:success?]}" if ENV['DEBUG']
+				puts "DEBUG: result present=#{!result.nil?}, success=#{result && result[:success?]}" if ENV["DEBUG"]
 				
 				return {success?: false, error: "GDB script failed", raw_output: result ? result[:stdout] : nil} unless result && result[:success?]
 				
-				puts "DEBUG: result=#{result.inspect[0..200]}" if ENV['DEBUG']
+				puts "DEBUG: result=#{result.inspect[0..200]}" if ENV["DEBUG"]
 				
 				actual_output = normalize_output(result[:stdout])
 				
-				puts "DEBUG: actual_output=#{actual_output.inspect[0..200]}" if ENV['DEBUG']
+				puts "DEBUG: actual_output=#{actual_output.inspect[0..200]}" if ENV["DEBUG"]
 				
 				# If updating snapshots, write the output and return success
 				if update_snapshots

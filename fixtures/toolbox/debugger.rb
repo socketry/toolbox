@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Toolbox
 	module Debugger
 		# Shared base module for debugger test fixtures
@@ -117,7 +119,7 @@ module Toolbox
 				
 				lines.each do |line|
 					# Skip debugger-specific prompts
-					next if debugger_prompts.any? { |pattern| line.match?(pattern) }
+					next if debugger_prompts.any?{|pattern| line.match?(pattern)}
 					
 					# Remove ANSI color codes
 					line = line.gsub(/\e\[\d+m/, "")
