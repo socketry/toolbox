@@ -1,0 +1,7 @@
+# Test printing Qnil
+
+command script import data/toolbox/init.py
+
+rb-object-print 8
+quit
+

@@ -1,0 +1,11 @@
+Scanning heap for type 0x..., limit=3...
+
+Found 3 object(s):
+
+  [0] $heap0 = <error: Argument must be a type.>
+  [1] $heap1 = <error: Argument must be a type.>
+  [2] $heap2 = <error: Argument must be a type.>
+
+Objects saved in $heap0 through $heap2
+Next scan address saved to $heap: 0x...
+Run '...' for next page

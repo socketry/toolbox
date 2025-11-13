@@ -1,0 +1,15 @@
+# Test printing short symbol
+
+target create ruby
+command script import data/toolbox/init.py
+
+breakpoint set --name ruby_process_options
+
+run
+expr unsigned long $value = (unsigned long)rb_eval_string(":hello")
+script print("===TOOLBOX-OUTPUT-START===")
+rb-object-print $value
+script print("===TOOLBOX-OUTPUT-END===")
+quit
+
+

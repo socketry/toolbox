@@ -1,0 +1,23 @@
+Scanning heap for type 0x..., limit=15...
+
+Found 15 object(s):
+
+  [0] $heap0 = <error: Argument must be a type.>
+  [1] $heap1 = <error: Argument must be a type.>
+  [2] $heap2 = <error: Argument must be a type.>
+  [3] $heap3 = <error: Argument must be a type.>
+  [4] $heap4 = <error: Argument must be a type.>
+  [5] $heap5 = <error: Argument must be a type.>
+  [6] $heap6 = <error: Argument must be a type.>
+  [7] $heap7 = <error: Argument must be a type.>
+  [8] $heap8 = <error: Argument must be a type.>
+  [9] $heap9 = <error: Argument must be a type.>
+  [10] $heap10 = <error: Argument must be a type.>
+  [11] $heap11 = <error: Argument must be a type.>
+  [12] $heap12 = <error: Argument must be a type.>
+  [13] $heap13 = <error: Argument must be a type.>
+  [14] $heap14 = <error: Argument must be a type.>
+
+Objects saved in $heap0 through $heap14
+Next scan address saved to $heap: 0x...
+Run '...' for next page

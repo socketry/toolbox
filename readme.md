@@ -1,26 +1,51 @@
-# Ruby::GDB
+# Toolbox
 
-Ruby debugging extensions for GDB, providing commands for inspecting Ruby objects, fibers, and VM internals.
+Ruby debugging toolbox for GDB and LLDB, providing commands for inspecting Ruby objects, fibers, and VM internals across multiple debuggers.
 
-[![Development Status](https://github.com/socketry/ruby-gdb/workflows/Test/badge.svg)](https://github.com/socketry/ruby-gdb/actions?workflow=Test)
+[![Development Status](https://github.com/socketry/toolbox/workflows/Test/badge.svg)](https://github.com/socketry/toolbox/actions?workflow=Test)
+
+## Features
+
+- **Multi-debugger support**: Works with both GDB and LLDB through a unified abstraction layer
+- **Object inspection**: Pretty-print Ruby objects, hashes, arrays, and complex structures
+- **Fiber debugging**: Navigate and inspect Ruby fibers with full backtraces
+- **Heap scanning**: Search the Ruby heap for objects and diagnose memory issues
+- **Stack inspection**: Examine both Ruby VM stacks and native C stacks
+- **Easy installation**: Simple bake tasks for both GDB and LLDB
+
+## Installation
+
+### For GDB
+
+```bash
+gem install toolbox
+bake toolbox:gdb:install
+```
+
+### For LLDB
+
+```bash
+gem install toolbox
+bake toolbox:lldb:install
+```
 
 ## Usage
 
-Please see the [project documentation](https://socketry.github.io/ruby-gdb/) for more details.
+Please see the [project documentation](https://socketry.github.io/toolbox/) for more details.
 
-  - [Getting Started](https://socketry.github.io/ruby-gdb/guides/getting-started/index) - This guide explains how to install and use Ruby GDB extensions for debugging Ruby programs and core dumps.
+  - [Getting Started](https://socketry.github.io/toolbox/guides/getting-started/index) - This guide explains how to install and use Toolbox for debugging Ruby programs and core dumps.
 
-  - [Object Inspection](https://socketry.github.io/ruby-gdb/guides/object-inspection/index) - This guide explains how to use `rb-object-print` to inspect Ruby objects, hashes, arrays, and structs in GDB.
+  - [Object Inspection](https://socketry.github.io/toolbox/guides/object-inspection/index) - This guide explains how to use `rb-object-print` to inspect Ruby objects, hashes, arrays, and structs.
 
-  - [Stack Inspection](https://socketry.github.io/ruby-gdb/guides/stack-inspection/index) - This guide explains how to inspect both Ruby VM stacks and native C stacks when debugging Ruby programs.
+  - [Stack Inspection](https://socketry.github.io/toolbox/guides/stack-inspection/index) - This guide explains how to inspect both Ruby VM stacks and native C stacks when debugging Ruby programs.
 
-  - [Fiber Debugging](https://socketry.github.io/ruby-gdb/guides/fiber-debugging/index) - This guide explains how to debug Ruby fibers using GDB, including inspecting fiber state, backtraces, and switching between fiber contexts.
+  - [Fiber Debugging](https://socketry.github.io/toolbox/guides/fiber-debugging/index) - This guide explains how to debug Ruby fibers, including inspecting fiber state, backtraces, and switching between fiber contexts.
 
-  - [Heap Debugging](https://socketry.github.io/ruby-gdb/guides/heap-debugging/index) - This guide explains how to navigate Ruby's heap to find objects, diagnose memory issues, and understand object relationships.
+  - [Heap Debugging](https://socketry.github.io/toolbox/guides/heap-debugging/index) - This guide explains how to navigate Ruby's heap to find objects, diagnose memory issues, and understand object relationships.
 
 ## Releases
 
-Please see the [project releases](https://socketry.github.io/ruby-gdb/releases/index) for all releases.
+Please see the [project releases](https://socketry.github.io/toolbox/releases/index) for all releases.
 
 ### v0.1.0
 
@@ -29,6 +54,7 @@ Please see the [project releases](https://socketry.github.io/ruby-gdb/releases/i
 ## See Also
 
   - [GDB Python API Documentation](https://sourceware.org/gdb/current/onlinedocs/gdb.html/Python-API.html)
+  - [LLDB Python API Documentation](https://lldb.llvm.org/use/python-reference.html)
   - [Ruby VM Internals](https://docs.ruby-lang.org/en/master/extension_rdoc.html)
 
 ## Contributing

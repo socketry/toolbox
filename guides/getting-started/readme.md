@@ -1,21 +1,21 @@
 # Getting Started
 
-This guide explains how to install and use Ruby GDB extensions for debugging Ruby programs and core dumps.
+This guide explains how to install and use Toolbox for debugging Ruby programs and core dumps with GDB or LLDB.
 
 ## Installation
 
 Install the gem:
 
 ~~~ bash
-$ gem install ruby-gdb
+$ gem install toolbox
 ~~~
 
 ### Installing GDB Extensions
 
-Install the extensions (automatically adds to `~/.gdbinit`):
+Install the GDB extensions (automatically adds to `~/.gdbinit`):
 
 ~~~ bash
-$ bake ruby:gdb:install
+$ bake toolbox:gdb:install
 ~~~
 
 This adds a single line to your `~/.gdbinit` that sources the extensions from the gem's data directory. The extensions will then load automatically every time you start GDB.
@@ -23,16 +23,40 @@ This adds a single line to your `~/.gdbinit` that sources the extensions from th
 To install to a custom `.gdbinit` location:
 
 ~~~ bash
-$ bake ruby:gdb:install gdbinit=/path/to/custom/gdbinit
+$ bake toolbox:gdb:install gdbinit=/path/to/custom/gdbinit
+~~~
+
+### Installing LLDB Extensions
+
+Install the LLDB extensions (automatically adds to `~/.lldbinit`):
+
+~~~ bash
+$ bake toolbox:lldb:install
+~~~
+
+This adds a command script import line to your `~/.lldbinit` that loads the extensions from the gem's data directory. The extensions will then load automatically every time you start LLDB.
+
+To install to a custom `.lldbinit` location:
+
+~~~ bash
+$ bake toolbox:lldb:install lldbinit=/path/to/custom/lldbinit
 ~~~
 
 ### Verifying Installation
 
-Check installation status:
+Check GDB installation status:
 
 ~~~ bash
-$ bake ruby:gdb:info
-Ruby GDB Extensions v0.1.0
+$ bake toolbox:gdb:info
+Ruby Toolbox GDB Extensions v0.1.0
+Status: ✓ Installed
+~~~
+
+Check LLDB installation status:
+
+~~~ bash
+$ bake toolbox:lldb:info
+Ruby Toolbox LLDB Extensions v0.1.0
 Status: ✓ Installed
 ~~~
 
@@ -45,10 +69,16 @@ Recursively print Ruby hash and array structures...
 
 ### Uninstalling
 
-To remove the extensions:
+To remove the GDB extensions:
 
 ~~~ bash
-$ bake ruby:gdb:uninstall
+$ bake toolbox:gdb:uninstall
+~~~
+
+To remove the LLDB extensions:
+
+~~~ bash
+$ bake toolbox:lldb:uninstall
 ~~~
 
 This removes the source line from your `~/.gdbinit`.

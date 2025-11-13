@@ -1,0 +1,40 @@
+Found 1 fiber(s) (limit reached):
+
+Fiber #0: <T_DATA@...> → <struct rb_fiber_struct@...>
+  Status: TERMINATED
+  Stack: <void *@...>
+  VM Stack: <VALUE *@...>
+  CFP: <rb_control_frame_t@...>
+
+Fibers cached. Use '...' to switch to a fiber.
+
+Switching to Fiber #0: VALUE 0x...
+Warning: Fiber is TERMINATED, may not have valid saved context
+
+Switched to Fiber: <T_DATA@...> → <struct rb_fiber_struct@...>
+  Status: TERMINATED
+
+Convenience variables set:
+  $fiber     = Current fiber VALUE
+  $fiber_ptr = Current fiber pointer (struct rb_fiber_struct *)
+  $ec        = Execution context (rb_execution_context_t *)
+  $errinfo   = Exception being handled (VALUE)
+
+Now try:
+  bt          # Show C backtrace of fiber
+  frame <n>   # Switch to frame N
+  up/down     # Move up/down frames
+  info locals # Show local variables
+  rp $errinfo # Pretty print exception
+
+Useful VALUES to inspect:
+  $ec->tag->retval        # Return value (in ensure after '...')
+  $ec->cfp->sp[-1]        # Top of VM stack
+  $fiber_ptr->cont.value  # Fiber yield/return value
+
+NOTE: Frame #0 is synthetic (created by the unwinder) and may look odd.
+      The real fiber context starts at frame #1.
+      Use '...' to skip to the actual fiber_setcontext frame.
+
+To switch back:
+  rb-fiber-switch off

@@ -1,0 +1,5 @@
+command script import data/toolbox/init.py
+
+rb-object-print 85
+
+quit
