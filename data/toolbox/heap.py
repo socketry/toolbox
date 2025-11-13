@@ -302,6 +302,11 @@ class RubyHeap:
 			except (debugger.MemoryError, debugger.Error) as e:
 				print(f"Error reading page {i}: {e}", file=sys.stderr)
 				continue
+			
+			# Skip pages with invalid dimensions
+			if total_slots <= 0 or slot_size <= 0:
+				print(f"Warning: Page {i} has invalid dimensions (total_slots={total_slots}, slot_size={slot_size}), skipping", file=sys.stderr)
+				continue
 
 			# For the first page, calculate which slot to start from
 			start_slot = 0
