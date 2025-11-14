@@ -37,13 +37,12 @@ class RubyObjectPrinter:
 		]
 	)
 	
-	def invoke(self, arguments, terminal, from_tty):
-		"""Execute the inspect command.
+	def invoke(self, arguments, terminal):
+		"""Execute the print command.
 		
 		Args:
 			arguments: Parsed Arguments object
-			terminal: Terminal formatter
-			from_tty: True if called from TTY
+			terminal: Terminal formatter (already configured for TTY/non-TTY)
 		"""
 		# Get options
 		max_depth = arguments.get_option('depth', 1)

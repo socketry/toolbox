@@ -157,46 +157,56 @@ class Usage:
 		# Return new Arguments with converted options
 		return Arguments(arguments.expressions, arguments.flags, converted_options)
 	
-	def help_text(self, command_name):
+	def help_text(self, command_name, terminal):
 		"""Generate help text from usage specification.
 		
 		Args:
-			command_name: Name of the command (e.g., "rb-object-print")
+			command_name: Name of the command (e.g., "rb-print")
+			terminal: Terminal for colored output
 		
 		Returns:
 			Formatted help string with usage, parameters, options, and flags
 		"""
-		lines = [self.summary, ""]
+		import format as fmt
+		
+		# Summary with color
+		lines = [terminal.print(fmt.bold, self.summary, fmt.reset), ""]
 		
 		# Build usage line
-		usage_parts = [command_name]
+		usage_parts = [terminal.print(fmt.bold, command_name, fmt.reset)]
+		
 		for param_name, _ in self.parameters:
-			usage_parts.append(f"<{param_name}>")
+			usage_parts.append(terminal.print(fmt.placeholder, f"<{param_name}>", fmt.reset))
 		
 		# Add option placeholders
 		for option_name in self.options.keys():
-			usage_parts.append(f"[--{option_name} N]")
+			opt_placeholder = f"[--{option_name} N]"
+			usage_parts.append(terminal.print(fmt.placeholder, opt_placeholder, fmt.reset))
 		
 		# Add flag placeholders
 		for flag_name, _ in self.flags:
-			usage_parts.append(f"[--{flag_name}]")
+			flag_placeholder = f"[--{flag_name}]"
+			usage_parts.append(terminal.print(fmt.placeholder, flag_placeholder, fmt.reset))
 		
 		lines.append(f"Usage: {' '.join(usage_parts)}")
 		lines.append("")
 		
 		# Parameter descriptions
 		if self.parameters:
-			lines.append("Parameters:")
+			lines.append(terminal.print(fmt.title, "Parameters:", fmt.reset))
+			
 			for param_name, param_desc in self.parameters:
+				param_str = terminal.print(fmt.symbol, param_name, fmt.reset)
 				if param_desc:
-					lines.append(f"  {param_name:<15} {param_desc}")
+					lines.append(f"  {param_str:<15} {param_desc}")
 				else:
-					lines.append(f"  {param_name}")
+					lines.append(f"  {param_str}")
 			lines.append("")
 		
 		# Option descriptions
 		if self.options:
-			lines.append("Options:")
+			lines.append(terminal.print(fmt.title, "Options:", fmt.reset))
+			
 			for option_name, opt_spec in self.options.items():
 				opt_type, opt_default = opt_spec[0], opt_spec[1]
 				opt_desc = opt_spec[2] if len(opt_spec) > 2 else None
@@ -204,28 +214,35 @@ class Usage:
 				type_str = opt_type.__name__ if hasattr(opt_type, '__name__') else str(opt_type)
 				default_str = f" (default: {opt_default})" if opt_default is not None else ""
 				
+				opt_str = terminal.print(fmt.symbol, f"--{option_name}", fmt.reset)
+				type_part = terminal.print(fmt.placeholder, f" <{type_str}>", fmt.reset)
+				
 				if opt_desc:
-					lines.append(f"  --{option_name} <{type_str}>{default_str}")
+					lines.append(f"  {opt_str}{type_part}{default_str}")
 					lines.append(f"      {opt_desc}")
 				else:
-					lines.append(f"  --{option_name} <{type_str}>{default_str}")
+					lines.append(f"  {opt_str}{type_part}{default_str}")
 			lines.append("")
 		
 		# Flag descriptions
 		if self.flags:
-			lines.append("Flags:")
+			lines.append(terminal.print(fmt.title, "Flags:", fmt.reset))
+			
 			for flag_name, flag_desc in self.flags:
+				flag_str = terminal.print(fmt.symbol, f"--{flag_name}", fmt.reset)
 				if flag_desc:
-					lines.append(f"  --{flag_name:<15} {flag_desc}")
+					lines.append(f"  {flag_str:<15} {flag_desc}")
 				else:
-					lines.append(f"  --{flag_name}")
+					lines.append(f"  {flag_str}")
 			lines.append("")
 		
 		# Examples section
 		if self.examples:
-			lines.append("Examples:")
+			lines.append(terminal.print(fmt.title, "Examples:", fmt.reset))
+			
 			for example_cmd, example_desc in self.examples:
-				lines.append(f"  {example_cmd}")
+				cmd_str = terminal.print(fmt.example, f"  {example_cmd}", fmt.reset)
+				lines.append(cmd_str)
 				if example_desc:
 					lines.append(f"      {example_desc}")
 			lines.append("")

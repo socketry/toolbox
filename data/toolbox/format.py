@@ -28,6 +28,9 @@ method = Style('method')  # Alias for symbol (method names)
 error = Style('error')
 bold = Style('bold')
 dim = Style('dim')
+title = Style('title')  # For section headers in help text
+placeholder = Style('placeholder')  # For help text placeholders (parameters, options)
+example = Style('example')  # For example commands in help text
 
 class Text:
 	"""Plain text output without any formatting."""
@@ -60,15 +63,16 @@ class Text:
 		if isinstance(address_val, int):
 			address_val = f"{address_val:x}"
 		
-		parts = [metadata, '<', type, type_name]
+		parts = [metadata, '<', reset, type, type_name, reset]
 		
 		if address_val:
-			parts.extend([metadata, f'@0x{address_val}'])
+			# @ symbol in dim, address in magenta
+			parts.extend([metadata, '@', reset, address, f'0x{address_val}', reset])
 		
 		if details:
-			parts.extend([f' {details}'])
+			parts.extend([metadata, f' {details}', reset])
 		
-		parts.extend([metadata, '>', reset])
+		parts.extend([reset, metadata, '>', reset])
 		
 		return self.print(*parts)
 	
@@ -116,17 +120,20 @@ class XTerm(Text):
 		# Map style sentinels to ANSI codes
 		self.style_map = {
 			reset: self.RESET,
-			metadata: self.DIM,
-			address: self.DIM,
-			type: '',
+			metadata: self.DIM,         # Type tag brackets <>
+			address: self.MAGENTA,      # Memory addresses in type tags
+			type: self.CYAN,            # Type names (T_ARRAY, VALUE, etc.)
 			value: '',
 			string: self.GREEN,
 			number: self.CYAN,
 			symbol: self.YELLOW,
-			method: self.YELLOW,  # Same as symbol
+			method: self.YELLOW,        # Same as symbol
 			error: self.RED,
 			bold: self.BOLD,
 			dim: self.DIM,
+			title: self.BOLD,           # Section headers in help text
+			placeholder: self.BLUE,     # Help text placeholders
+			example: self.GREEN,        # Example commands in help text
 		}
 	
 	def print(self, *args):

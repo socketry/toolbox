@@ -6,6 +6,7 @@ would require more extensive testing and edge case handling.
 """
 
 import lldb
+import format
 
 # Command categories (LLDB doesn't have exact equivalents, using symbolic constants)
 COMMAND_DATA = 0
@@ -462,74 +463,6 @@ class Command:
 			Command instance or None
 		"""
 		return cls._commands.get(name)
-
-
-def register(command_name, command_class, usage=None, category=COMMAND_USER):
-	print(f"DEBUG: Registering command: {command_name} category: {category}")
-	"""Register a command with LLDB using declarative interface.
-	
-	Creates a wrapper that handles argument parsing, validation, and delegation.
-	
-	Args:
-		command_name: Name of the command (e.g., "rb-object-print")
-		command_class: Class to instantiate (must have invoke(arguments, from_tty) method)
-		usage: Optional command.Usage specification for validation and help
-		category: Command category (COMMAND_USER or COMMAND_DATA)
-	
-	Returns:
-		The registered command wrapper instance
-	
-	Example:
-		class RubyObjectPrinter:
-			def invoke(self, arguments, from_tty):
-				value_expr = arguments.expressions[0]
-				depth = arguments.get_option('depth', 1)
-				# ... print logic
-		
-		debugger.register("rb-object-print", RubyObjectPrinter, 
-		                  usage=RubyObjectPrinter.USAGE)
-	"""
-	class RegisteredCommand(Command):
-		def __init__(self):
-			print(f"Registering command: {command_name} category: {category}")
-			super().__init__(command_name, category)
-			self.command_instance = None
-			self.usage_spec = usage
-		
-		def invoke(self, arg, from_tty):
-			try:
-				# Parse and validate arguments
-				if self.usage_spec:
-					arguments = self.usage_spec.parse(arg if arg else "")
-				else:
-					# Fallback: use raw parsing
-					import command as cmd_module
-					arguments = cmd_module.parse_arguments(arg if arg else "")
-				
-				# Create terminal for formatting
-				import format
-				terminal = format.create_terminal(from_tty)
-				
-				# Lazy instantiate command class
-				if self.command_instance is None:
-					self.command_instance = command_class()
-				
-				# Call command's invoke with parsed Arguments object and terminal
-				self.command_instance.invoke(arguments, terminal, from_tty)
-				
-			except ValueError as e:
-				# Validation error - show usage
-				print(f"Error: {e}")
-				if self.usage_spec:
-					print()
-					print(self.usage_spec.help_text(command_name))
-			except Exception as e:
-				print(f"Error: {e}")
-				import traceback
-				traceback.print_exc()
-	
-	print(f"DEBUG: Returning RegisteredCommand for: {command_name}")
-	return RegisteredCommand()
 
 
 def parse_and_eval(expression):
@@ -990,29 +923,29 @@ def register(name, handler_class, usage=None, category=COMMAND_USER):
 		
 		def invoke(self, arg, from_tty):
 			"""LLDB entry point - parses arguments and delegates to handler."""
+			# Create terminal first (needed for help text)
+			import format
+			terminal = format.create_terminal(from_tty)
+			
 			try:
 				# Parse and validate arguments
 				if self.usage_spec:
-					try:
-						arguments = self.usage_spec.parse(arg if arg else "")
-					except ValueError as e:
-						print(f"Error: {e}")
-						print()
-						print(self.usage_spec.help_text(name))
-						return
+					arguments = self.usage_spec.parse(arg if arg else "")
 				else:
 					# Fallback to basic parsing without validation
 					import command
 					arguments = command.parse_arguments(arg if arg else "")
 				
-				# Create terminal for formatting
-				import format
-				terminal = format.create_terminal(from_tty)
-				
 				# Instantiate handler and invoke
 				handler = self.handler_class()
 				handler.invoke(arguments, terminal)
 				
+			except ValueError as e:
+				# Validation error - show colored help
+				print(f"Error: {e}")
+				if self.usage_spec:
+					print()
+					print(self.usage_spec.help_text(name, terminal))
 			except Exception as e:
 				print(f"Error: {e}")
 				import traceback

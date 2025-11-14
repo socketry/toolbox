@@ -385,7 +385,7 @@ class RubyContextStorageCommand(debugger.Command):
             flags_set = {'debug'} if debug else set()
             args_for_printer = command.Arguments([storage_val], flags_set, {'depth': depth})
             
-            printer.invoke(args_for_printer, terminal, from_tty)
+            printer.invoke(args_for_printer, terminal)
             
         except Exception as e:
             print(f"Error: {e}")
