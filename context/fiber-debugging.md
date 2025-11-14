@@ -44,7 +44,7 @@ Fiber #1: <T_DATA@...> → <struct rb_fiber_struct@...>
 For large applications, limit the scan:
 
 ~~~
-(gdb) rb-fiber-scan-heap 10    # Find first 10 fibers only
+(gdb) rb-fiber-scan-heap --limit 10    # Find first 10 fibers only
 ~~~
 
 ### Caching Results

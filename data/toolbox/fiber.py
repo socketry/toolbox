@@ -228,10 +228,10 @@ class RubyFiberScanHeapCommand(debugger.Command):
     
     def usage(self):
         """Print usage information."""
-        print("Usage: rb-fiber-scan-heap [limit] [--cache [filename]] [--terminated]")
+        print("Usage: rb-fiber-scan-heap [--limit N] [--cache [filename]] [--terminated]")
         print("Examples:")
         print("  rb-fiber-scan-heap                    # Find all non-terminated fibers")
-        print("  rb-fiber-scan-heap 10                 # Find first 10 non-terminated fibers")
+        print("  rb-fiber-scan-heap --limit 10         # Find first 10 non-terminated fibers")
         print("  rb-fiber-scan-heap --terminated       # Include terminated fibers")
         print("  rb-fiber-scan-heap --cache            # Use fibers.json cache")
         print("  rb-fiber-scan-heap --cache my.json    # Use custom cache file")
@@ -309,17 +309,18 @@ class RubyFiberScanHeapCommand(debugger.Command):
         # Parse arguments using the robust parser
         arguments = command.parse_arguments(arg if arg else "")
         
-        # Get limit from first expression (positional argument)
+        # Get limit from --limit option
         limit = None
-        if arguments.expressions:
+        limit_str = arguments.get_option('limit')
+        if limit_str:
             try:
-                limit = int(arguments.expressions[0])
+                limit = int(limit_str)
                 if limit <= 0:
                     print("Error: limit must be positive")
                     self.usage()
                     return
             except ValueError:
-                print(f"Error: invalid limit '{arguments.expressions[0]}'")
+                print(f"Error: invalid limit '{limit_str}'")
                 self.usage()
                 return
         

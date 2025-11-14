@@ -373,7 +373,7 @@ Later in the same session, just load the cache:
 For production core dumps with millions of objects:
 
 ~~~
-(gdb) rb-fiber-scan-heap 20             # Find first 20 fibers only
+(gdb) rb-fiber-scan-heap --limit 20     # Find first 20 fibers only
 (gdb) rb-heap-scan --limit 100          # Find first 100 objects of any type
 ~~~
 

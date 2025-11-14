@@ -87,6 +87,7 @@ This removes the source line from your `~/.gdbinit`.
 
 Ruby GDB provides specialized commands for debugging Ruby at multiple levels:
 
+- **Context Setup** (`rb-context`) - Get current execution context and set up convenience variables
 - **Object Inspection** (`rb-object-print`) - View Ruby objects, hashes, arrays, and structs with proper formatting
 - **Fiber Debugging** (`rb-fiber-*`) - Scan heap for fibers, inspect state, and switch contexts
 - **Stack Analysis** (`rb-stack-trace`) - Examine combined VM (Ruby) and C (native) stack frames

@@ -21,7 +21,7 @@ set $fiber_value = argv[0]
 # Now scan the heap for fibers
 # We should find at least 1 fiber (the one we created)
 echo ===TOOLBOX-OUTPUT-START===\n
-rb-fiber-scan-heap 1
+rb-fiber-scan-heap --limit 1
 echo ===TOOLBOX-OUTPUT-END===\n
 
 quit

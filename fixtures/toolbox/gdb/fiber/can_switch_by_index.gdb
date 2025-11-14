@@ -18,7 +18,7 @@ run
 
 # Scan for fibers first
 echo ===TOOLBOX-OUTPUT-START===\n
-rb-fiber-scan-heap 1
+rb-fiber-scan-heap --limit 1
 echo \n
 rb-fiber-scan-switch 0
 echo ===TOOLBOX-OUTPUT-END===\n

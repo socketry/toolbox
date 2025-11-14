@@ -9,7 +9,7 @@ run
 # Now scan the heap for fibers
 # We should find at least 1 fiber (the one we created)
 script print("===TOOLBOX-OUTPUT-START===")
-rb-fiber-scan-heap 1
+rb-fiber-scan-heap --limit 1
 script print("===TOOLBOX-OUTPUT-END===")
 
 quit
