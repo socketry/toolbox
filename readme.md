@@ -31,7 +31,7 @@ Please see the [project documentation](https://socketry.github.io/toolbox/) for 
 
 Please see the [project releases](https://socketry.github.io/toolbox/releases/index) for all releases.
 
-### Unreleased
+### v0.2.0
 
   - Introduce support for `lldb` using debugger shims.
 

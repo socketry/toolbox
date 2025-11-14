@@ -1,6 +1,6 @@
 # Releases
 
-## Unreleased
+## v0.2.0
 
   - Introduce support for `lldb` using debugger shims.
 
