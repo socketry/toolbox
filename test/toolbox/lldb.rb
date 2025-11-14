@@ -49,5 +49,9 @@ describe Toolbox::LLDB do
 		with "stack" do
 			include_context Toolbox::TestCases, "lldb/stack", "*.lldb"
 		end
+		
+		with "context" do
+			include_context Toolbox::TestCases, "lldb/context", "*.lldb"
+		end
 	end
 end

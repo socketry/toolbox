@@ -1,0 +1,13 @@
+command script import data/toolbox/init.py
+
+# Break at rb_f_puts in inner_method
+b rb_f_puts
+run
+
+# Get current execution context and print info
+script print("===TOOLBOX-OUTPUT-START===")
+rb-context
+script print("===TOOLBOX-OUTPUT-END===")
+
+quit
+

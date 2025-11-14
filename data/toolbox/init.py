@@ -25,8 +25,9 @@ failed_extensions = []
 # Try to load each extension individually
 extensions_to_load = [
 	('object', 'rb-object-print'),
+	('context', 'rb-context'),
 	('fiber', 'rb-fiber-scan-heap, rb-fiber-switch'),
-	('stack', 'rb-stack-print'),
+	('stack', 'rb-stack-trace'),
 	('heap', 'rb-heap-scan'),
 ]
 
@@ -34,6 +35,8 @@ for module_name, commands in extensions_to_load:
 	try:
 		if module_name == 'object':
 			import object
+		elif module_name == 'context':
+			import context
 		elif module_name == 'fiber':
 			import fiber
 		elif module_name == 'stack':

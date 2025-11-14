@@ -112,9 +112,9 @@ Set a breakpoint and run:
 Once stopped, use Ruby debugging commands:
 
 ~~~
-(gdb) rb-object-print $ec->cfp->sp[-1]   # Print top of VM stack
-(gdb) rb-fiber-scan-heap                 # Scan heap for fibers
 (gdb) rb-stack-trace                     # Show combined Ruby/C backtrace
+(gdb) rb-fiber-scan-heap                 # Scan heap for fibers
+(gdb) rb-heap-scan --type RUBY_T_STRING --limit 5  # Find strings
 ~~~
 
 ### Debugging a Core Dump
@@ -130,8 +130,9 @@ Diagnose the issue (extensions load automatically if installed):
 ~~~
 (gdb) rb-fiber-scan-heap                 # Scan heap for all fibers
 (gdb) rb-fiber-scan-stack-trace-all      # Show backtraces for all fibers
-(gdb) rb-object-print $ec->errinfo       # Print exception objects
-(gdb) rb-heap-scan --type RUBY_T_HASH    # Find all hashes
+(gdb) rb-fiber-scan-switch 0             # Switch to main fiber
+(gdb) rb-object-print $errinfo --depth 2 # Print exception (now $errinfo is set)
+(gdb) rb-heap-scan --type RUBY_T_HASH --limit 10  # Find hashes
 ~~~
 
 ## Common Workflows
@@ -143,10 +144,11 @@ When a Ruby exception occurs, you can inspect it in detail:
 ~~~
 (gdb) break rb_exc_raise
 (gdb) run
-(gdb) rb-object-print $ec->errinfo --depth 2
+(gdb) rb-context
+(gdb) rb-object-print $errinfo --depth 2
 ~~~
 
-This shows the exception class, message, and any nested structures.
+This shows the exception class, message, and any nested structures. The `rb-context` command displays the current execution context and sets up `$ec`, `$cfp`, and `$errinfo` convenience variables.
 
 ### Debugging Fiber Issues
 
