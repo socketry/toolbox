@@ -2,7 +2,8 @@
 
 source data/toolbox/init.py
 
-# Break at rb_f_puts in the fiber
+# Break at rb_f_puts in the fiber (make pending to handle lazy loading)
+set breakpoint pending on
 break rb_f_puts
 run
 

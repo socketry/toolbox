@@ -571,6 +571,53 @@ class RubyStackTraceCommand(debugger.Command):
         print("  rb-stack-trace              # Show backtrace for current fiber/thread")
         print("  rb-stack-trace --values     # Show backtrace with stack VALUEs")
     
+    def _get_current_execution_context(self):
+        """Get the current execution context from the running thread.
+        
+        Tries multiple approaches in order of preference:
+        1. ruby_current_ec - TLS variable (works in GDB, some LLDB)
+        2. rb_current_ec_noinline() - function call (works in most cases)
+        3. rb_current_ec() - macOS-specific function
+        
+        Returns:
+            Execution context value, or None if not available
+        """
+        # Try ruby_current_ec variable first
+        try:
+            ec = debugger.parse_and_eval('ruby_current_ec')
+            if ec is not None and int(ec) != 0:
+                print(f"DEBUG: Got execution context from ruby_current_ec: {ec}", file=sys.stderr)
+                return ec
+            else:
+                print(f"DEBUG: ruby_current_ec returned null/zero: {ec}", file=sys.stderr)
+        except debugger.Error as e:
+            print(f"DEBUG: ruby_current_ec failed: {e}", file=sys.stderr)
+        
+        # Fallback to rb_current_ec_noinline() function
+        try:
+            ec = debugger.parse_and_eval('rb_current_ec_noinline()')
+            if ec is not None and int(ec) != 0:
+                print(f"DEBUG: Got execution context from rb_current_ec_noinline(): {ec}", file=sys.stderr)
+                return ec
+            else:
+                print(f"DEBUG: rb_current_ec_noinline() returned null/zero: {ec}", file=sys.stderr)
+        except debugger.Error as e:
+            print(f"DEBUG: rb_current_ec_noinline() failed: {e}", file=sys.stderr)
+        
+        # Last resort: rb_current_ec() (macOS-specific)
+        try:
+            ec = debugger.parse_and_eval('rb_current_ec()')
+            if ec is not None and int(ec) != 0:
+                print(f"DEBUG: Got execution context from rb_current_ec(): {ec}", file=sys.stderr)
+                return ec
+            else:
+                print(f"DEBUG: rb_current_ec() returned null/zero: {ec}", file=sys.stderr)
+        except debugger.Error as e:
+            print(f"DEBUG: rb_current_ec() failed: {e}", file=sys.stderr)
+        
+        print("DEBUG: All methods to get execution context failed", file=sys.stderr)
+        return None
+    
     def invoke(self, arg, from_tty):
         """Execute the stack trace command."""
         try:
@@ -602,38 +649,13 @@ class RubyStackTraceCommand(debugger.Command):
                 print()
                 
                 try:
-                    # Get current execution context from the running thread
-                    # The approach depends on the debugger:
-                    # - GDB can access thread-local variable ruby_current_ec directly
-                    # - LLDB cannot access TLS variables, must use rb_current_ec_noinline()
-                    ec = None
+                    ec = self._get_current_execution_context()
                     
-                    if debugger.DEBUGGER_NAME == 'gdb':
-                        # GDB: Try direct TLS variable access first (faster)
-                        try:
-                            ec = debugger.parse_and_eval('ruby_current_ec')
-                        except debugger.Error:
-                            # Fallback to function call
-                            try:
-                                ec = debugger.parse_and_eval('rb_current_ec_noinline()')
-                            except debugger.Error:
-                                pass
-                    else:
-                        # LLDB: Must use function call (cannot access TLS variables)
-                        try:
-                            ec = debugger.parse_and_eval('rb_current_ec_noinline()')
-                        except debugger.Error:
-                            # Fallback attempts for macOS or other platforms
-                            try:
-                                ec = debugger.parse_and_eval('rb_current_ec()')
-                            except debugger.Error:
-                                pass
-                    
-                    if ec is None or int(ec) == 0:
+                    if ec is None:
                         print("Error: No execution context available")
                         print("Either select a fiber with 'rb-fiber-switch' or ensure Ruby is running")
                         print("\nTroubleshooting:")
-                        print("  - Check if Ruby symbols are loaded: image lookup -n rb_current_ec_noinline")
+                        print("  - Check if Ruby symbols are loaded")
                         print("  - Ensure the process is stopped at a Ruby frame")
                         return
                     
