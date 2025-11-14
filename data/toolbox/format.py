@@ -120,7 +120,6 @@ class XTerm(Text):
 			metadata: self.DIM,         # Type tag brackets <>
 			address: self.MAGENTA,      # Memory addresses in type tags
 			type: self.CYAN,            # Type names (T_ARRAY, VALUE, etc.)
-			value_style: '',
 			string: self.GREEN,
 			number: self.CYAN,
 			symbol: self.YELLOW,
