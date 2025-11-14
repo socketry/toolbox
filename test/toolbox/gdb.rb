@@ -49,5 +49,9 @@ describe Toolbox::GDB do
 		with "stack" do
 			include_context Toolbox::TestCases, "gdb/stack", "*.gdb"
 		end
+		
+		with "context" do
+			include_context Toolbox::TestCases, "gdb/context", "*.gdb"
+		end
 	end
 end
