@@ -77,12 +77,8 @@ class RArrayEmbedded(RArrayBase):
 	def print_to(self, terminal):
 		"""Print this array with formatting."""
 		addr = int(self.value)
-		return terminal.print(
-			format.metadata, '<',
-			format.type, 'T_ARRAY',
-			format.metadata, f'@0x{addr:x} embedded length={len(self)}>',
-			format.reset
-		)
+		details = f"embedded length={len(self)}"
+		terminal.print_type_tag('T_ARRAY', addr, details)
 
 class RArrayHeap(RArrayBase):
 	"""Heap array (larger arrays with separate memory allocation)."""
@@ -101,12 +97,8 @@ class RArrayHeap(RArrayBase):
 	def print_to(self, terminal):
 		"""Print this array with formatting."""
 		addr = int(self.value)
-		return terminal.print(
-			format.metadata, '<',
-			format.type, 'T_ARRAY',
-			format.metadata, f'@0x{addr:x} heap length={len(self)}>',
-			format.reset
-		)
+		details = f"heap length={len(self)}"
+		terminal.print_type_tag('T_ARRAY', addr, details)
 
 def RArray(value):
 	"""Factory function that returns the appropriate RArray variant.

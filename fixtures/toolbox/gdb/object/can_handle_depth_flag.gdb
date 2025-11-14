@@ -2,6 +2,6 @@
 
 source data/toolbox/init.py
 
-rb-object-print 85 --depth 3
+rb-print 85 --depth 3
 quit
 

@@ -24,8 +24,8 @@ failed_extensions = []
 
 # Try to load each extension individually
 extensions_to_load = [
-	('object', 'rb-object-print'),
-	('context', 'rb-context'),
+	('print', 'rb-print'),
+	('context', 'rb-context, rb-context-storage'),
 	('fiber', 'rb-fiber-scan-heap, rb-fiber-switch'),
 	('stack', 'rb-stack-trace'),
 	('heap', 'rb-heap-scan'),
@@ -33,8 +33,8 @@ extensions_to_load = [
 
 for module_name, commands in extensions_to_load:
 	try:
-		if module_name == 'object':
-			import object
+		if module_name == 'print':
+			import print as print_module
 		elif module_name == 'context':
 			import context
 		elif module_name == 'fiber':
@@ -44,8 +44,12 @@ for module_name, commands in extensions_to_load:
 		elif module_name == 'heap':
 			import heap
 		loaded_extensions.append((module_name, commands))
-	except ImportError as e:
+	except Exception as e:
+		# Catch all exceptions during module load
 		failed_extensions.append((module_name, str(e)))
+		import traceback
+		print(f"Failed to load {module_name}: {e}", file=sys.stderr)
+		traceback.print_exc(file=sys.stderr)
 
 # Silently load - no status messages printed by default
 # Users can run 'help' to see available commands

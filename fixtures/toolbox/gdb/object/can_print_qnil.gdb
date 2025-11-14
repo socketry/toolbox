@@ -2,6 +2,6 @@
 
 source data/toolbox/init.py
 
-rb-object-print 8
+rb-print 8
 quit
 

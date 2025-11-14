@@ -88,15 +88,13 @@ class RBasic:
 		return f"<{type_str}:0x{int(self.value):x}>"
 	
 	def print_to(self, terminal):
-		"""Return formatted basic object representation."""
+		"""Print formatted basic object representation."""
 		type_str = type_name(self.value)
 		addr = int(self.value)
-		return terminal.print(
-			format.metadata, '<',
-			format.type, type_str,
-			format.metadata, f':0x{addr:x}>',
-			format.reset
-		)
+		# Note: Using : instead of @ for basic objects
+		import format as fmt
+		terminal.print(fmt.metadata, '<', fmt.reset, fmt.type, type_str, fmt.reset, end='')
+		terminal.print(fmt.metadata, f':0x{addr:x}>', fmt.reset, end='')
 	
 	def print_recursive(self, printer, depth):
 		"""Print this basic object (no recursion)."""

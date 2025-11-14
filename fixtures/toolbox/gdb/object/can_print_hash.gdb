@@ -21,7 +21,7 @@ set $hash = argv[0]
 
 # Print the hash
 echo ===TOOLBOX-OUTPUT-START===\n
-rb-object-print $hash
+rb-print $hash
 echo ===TOOLBOX-OUTPUT-END===\n
 
 quit

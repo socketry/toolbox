@@ -3,7 +3,7 @@
 command script import data/toolbox/init.py
 
 script print("===TOOLBOX-OUTPUT-START===")
-rb-object-print 0
+rb-print 0
 script print("===TOOLBOX-OUTPUT-END===")
 
 quit

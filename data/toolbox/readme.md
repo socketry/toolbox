@@ -14,7 +14,7 @@ data/toolbox/
 │   └── *.md                # Documentation
 │
 # Ruby debugging extensions (currently GDB-specific, migrating to abstraction)
-├── object.py               # Object inspection (rb-object-print)
+├── object.py               # Object inspection (rb-print)
 ├── fiber.py                # Fiber debugging (rb-fiber-scan-heap, rb-fiber-switch)
 ├── heap.py                 # Heap scanning (rb-heap-scan)
 ├── stack.py                # Stack inspection
@@ -113,7 +113,7 @@ command script import /path/to/gem/data/toolbox/init.py
 ## Available Commands
 
 ### Object Inspection
-- `rb-object-print <expression> [--depth N]` - Print Ruby objects with recursion
+- `rb-print <expression> [--depth N]` - Print Ruby objects with recursion
 
 ### Fiber Debugging
 - `rb-fiber-scan-heap [--limit N]` - Scan heap for fiber objects
@@ -151,14 +151,14 @@ command script import /path/to/gem/data/toolbox/init.py
 Test with GDB:
 ```bash
 gdb -q ruby
-(gdb) help rb-object-print
+(gdb) help rb-print
 (gdb) help rb-fiber-scan-heap
 ```
 
 Test with LLDB (once migrated):
 ```bash
 lldb ruby
-(lldb) help rb-object-print
+(lldb) help rb-print
 (lldb) help rb-fiber-scan-heap
 ```
 
@@ -192,7 +192,7 @@ if toolbox_dir not in sys.path:
 This allows:
 ```python
 import debugger      # data/toolbox/debugger.py
-import object        # data/toolbox/object.py
+import print         # data/toolbox/print.py
 import fiber         # data/toolbox/fiber.py
 from debugger import gdb   # data/toolbox/debugger/gdb.py
 ```

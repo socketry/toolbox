@@ -1,12 +1,12 @@
 # Object Inspection
 
-This guide explains how to use `rb-object-print` to inspect Ruby objects, hashes, arrays, and structs in GDB.
+This guide explains how to use `rb-print` to inspect Ruby objects, hashes, arrays, and structs in GDB.
 
 ## Why Object Inspection Matters
 
 When debugging Ruby programs or analyzing core dumps, you often need to inspect complex data structures that are difficult to read in their raw memory representation. Standard GDB commands show pointer addresses and raw memory, but not the logical structure of Ruby objects.
 
-Use `rb-object-print` when you need:
+Use `rb-print` when you need:
 
 - **Understand exception objects**: See the full exception hierarchy, message, and backtrace data
 - **Inspect fiber storage**: View thread-local data and fiber-specific variables
@@ -15,12 +15,12 @@ Use `rb-object-print` when you need:
 
 ## Basic Usage
 
-The `rb-object-print` command recursively prints Ruby objects in a human-readable format.
+The `rb-print` command recursively prints Ruby objects in a human-readable format.
 
 ### Syntax
 
 ~~~
-rb-object-print <expression> [--depth N] [--debug]
+rb-print <expression> [--depth N] [--debug]
 ~~~
 
 Where:
@@ -33,10 +33,10 @@ Where:
 Print immediate values and special constants:
 
 ~~~
-(gdb) rb-object-print 0        # <T_FALSE>
-(gdb) rb-object-print 8        # <T_NIL>
-(gdb) rb-object-print 20       # <T_TRUE>
-(gdb) rb-object-print 85       # <T_FIXNUM> 42
+(gdb) rb-print 0        # <T_FALSE>
+(gdb) rb-print 8        # <T_NIL>
+(gdb) rb-print 20       # <T_TRUE>
+(gdb) rb-print 85       # <T_FIXNUM> 42
 ~~~
 
 These work without any Ruby process running, making them useful for learning and testing.
@@ -46,10 +46,10 @@ These work without any Ruby process running, making them useful for learning and
 Use any valid GDB expression:
 
 ~~~
-(gdb) rb-object-print $ec->errinfo                    # Exception object
-(gdb) rb-object-print $ec->cfp->sp[-1]                # Top of VM stack
-(gdb) rb-object-print $ec->storage                    # Fiber storage hash
-(gdb) rb-object-print (VALUE)0x00007f8a12345678      # Object at specific address
+(gdb) rb-print $ec->errinfo                    # Exception object
+(gdb) rb-print $ec->cfp->sp[-1]                # Top of VM stack
+(gdb) rb-print $ec->storage                    # Fiber storage hash
+(gdb) rb-print (VALUE)0x00007f8a12345678      # Object at specific address
 ~~~
 
 ## Inspecting Hashes
@@ -61,7 +61,7 @@ Ruby hashes have two internal representations (ST table and AR table). The comma
 For hashes with fewer than 8 entries, Ruby uses an array-based implementation:
 
 ~~~
-(gdb) rb-object-print $some_hash
+(gdb) rb-print $some_hash
 <T_HASH@...>
 [   0] K: <T_SYMBOL> :name
        V: <T_STRING@...> "Alice"
@@ -76,7 +76,7 @@ For hashes with fewer than 8 entries, Ruby uses an array-based implementation:
 For larger hashes, Ruby uses a hash table (output format is similar):
 
 ~~~
-(gdb) rb-object-print $large_hash
+(gdb) rb-print $large_hash
 <T_HASH@...>
 [   0] K: <T_SYMBOL> :user_id
        V: <T_FIXNUM> 12345
@@ -90,12 +90,12 @@ For larger hashes, Ruby uses a hash table (output format is similar):
 Prevent overwhelming output from deeply nested structures:
 
 ~~~
-(gdb) rb-object-print $nested_hash --depth 1   # Only top level
+(gdb) rb-print $nested_hash --depth 1   # Only top level
 <T_HASH@...>
 [   0] K: <T_SYMBOL> :data
        V: <T_HASH@...>  # Nested hash not expanded
 
-(gdb) rb-object-print $nested_hash --depth 2   # Expand one level
+(gdb) rb-print $nested_hash --depth 2   # Expand one level
 <T_HASH@...>
 [   0] K: <T_SYMBOL> :data
        V: <T_HASH@...>
@@ -114,7 +114,7 @@ Arrays also have two representations based on size:
 Arrays display their elements with type information:
 
 ~~~
-(gdb) rb-object-print $array
+(gdb) rb-print $array
 <T_ARRAY@...>
 [   0] <T_FIXNUM> 1
 [   1] <T_FIXNUM> 2
@@ -124,7 +124,7 @@ Arrays display their elements with type information:
 For arrays with nested objects:
 
 ~~~
-(gdb) rb-object-print $array --depth 2
+(gdb) rb-print $array --depth 2
 <T_ARRAY@...>
 [   0] <T_STRING@...> "first item"
 [   1] <T_HASH@...>
@@ -138,7 +138,7 @@ For arrays with nested objects:
 Ruby Struct objects work similarly to arrays:
 
 ~~~
-(gdb) rb-object-print $struct_instance
+(gdb) rb-print $struct_instance
 <T_STRUCT@...>
 [   0] <T_STRING@...> "John"
 [   1] <T_FIXNUM> 25
@@ -155,7 +155,7 @@ When a fiber has an exception, inspect it:
 ~~~
 (gdb) rb-fiber-scan-heap
 (gdb) rb-fiber-scan-switch 5  # Switch to fiber #5
-(gdb) rb-object-print $errinfo --depth 3
+(gdb) rb-print $errinfo --depth 3
 ~~~
 
 This reveals the full exception structure including any nested causes. After switching to a fiber, `$errinfo` and `$ec` convenience variables are automatically set.
@@ -167,8 +167,8 @@ Break at a method and examine arguments on the stack:
 ~~~
 (gdb) break some_method
 (gdb) run
-(gdb) rb-object-print $ec->cfp->sp[-1]  # Last argument
-(gdb) rb-object-print $ec->cfp->sp[-2]  # Second-to-last argument
+(gdb) rb-print $ec->cfp->sp[-1]  # Last argument
+(gdb) rb-print $ec->cfp->sp[-2]  # Second-to-last argument
 ~~~
 
 ### Examining Fiber Storage
@@ -178,17 +178,17 @@ Thread-local variables are stored in fiber storage:
 ~~~
 (gdb) rb-fiber-scan-heap
 (gdb) rb-fiber-scan-switch 0
-(gdb) rb-object-print $ec->storage --depth 2
+(gdb) rb-print $ec->storage --depth 2
 ~~~
 
 This shows all thread-local variables and their values.
 
 ## Debugging with --debug Flag
 
-When `rb-object-print` doesn't show what you expect, use `--debug`:
+When `rb-print` doesn't show what you expect, use `--debug`:
 
 ~~~
-(gdb) rb-object-print $suspicious_value --debug
+(gdb) rb-print $suspicious_value --debug
 DEBUG: Evaluated '$suspicious_value' to 0x7f8a1c567890
 DEBUG: Loaded constant RUBY_T_MASK = 31
 DEBUG: Object at 0x7f8a1c567890 with flags=0x20040005, type=0x5

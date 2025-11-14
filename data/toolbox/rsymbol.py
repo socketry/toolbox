@@ -138,25 +138,13 @@ class RSymbolImmediate:
 	
 	def print_to(self, terminal):
 		"""Return formatted symbol representation."""
+		terminal.print_type_tag('T_SYMBOL')
+		terminal.print(' ', end='')
 		name = self.to_str()
 		if name:
-			tag = terminal.print(
-				format.metadata, '<',
-				format.type, 'T_SYMBOL',
-				format.metadata, '>',
-				format.reset
-			)
-			symbol_val = terminal.print(format.symbol, f':{name}', format.reset)
-			return f"{tag} {symbol_val}"
+			terminal.print(format.symbol, f':{name}', format.reset, end='')
 		else:
-			tag = terminal.print(
-				format.metadata, '<',
-				format.type, 'T_SYMBOL',
-				format.metadata, '>',
-				format.reset
-			)
-			symbol_val = terminal.print(format.symbol, f':id_0x{self.id():x}', format.reset)
-			return f"{tag} {symbol_val}"
+			terminal.print(format.symbol, f':id_0x{self.id():x}', format.reset, end='')
 	
 	def print_recursive(self, printer, depth):
 		"""Print this symbol (no recursion needed)."""
@@ -208,28 +196,16 @@ class RSymbolObject:
 			return f"<T_SYMBOL@0x{addr:x}> :<Symbol:0x{int(fstr_val):x}>"
 	
 	def print_to(self, terminal):
-		"""Return formatted symbol representation."""
+		"""Print formatted symbol representation."""
 		name = self.to_str()
 		addr = int(self.value)
+		terminal.print_type_tag('T_SYMBOL', addr)
+		terminal.print(' ', end='')
 		if name:
-			tag = terminal.print(
-				format.metadata, '<',
-				format.type, 'T_SYMBOL',
-				format.metadata, f'@0x{addr:x}>',
-				format.reset
-			)
-			symbol_val = terminal.print(format.symbol, f':{name}', format.reset)
-			return f"{tag} {symbol_val}"
+			terminal.print(format.symbol, f':{name}', format.reset, end='')
 		else:
 			fstr_val = self.fstr()
-			tag = terminal.print(
-				format.metadata, '<',
-				format.type, 'T_SYMBOL',
-				format.metadata, f'@0x{addr:x}>',
-				format.reset
-			)
-			symbol_val = terminal.print(format.symbol, f':<Symbol:0x{int(fstr_val):x}>', format.reset)
-			return f"{tag} {symbol_val}"
+			terminal.print(format.symbol, f':<Symbol:0x{int(fstr_val):x}>', format.reset, end='')
 	
 	def print_recursive(self, printer, depth):
 		"""Print this symbol (no recursion needed)."""

@@ -60,14 +60,10 @@ class RStructEmbedded(RStructBase):
 		return f"<T_STRUCT@0x{addr:x} embedded length={len(self)}>"
 	
 	def print_to(self, terminal):
-		"""Return formatted struct representation."""
+		"""Print formatted struct representation."""
 		addr = int(self.value)
-		return terminal.print(
-			format.metadata, '<',
-			format.type, 'T_STRUCT',
-			format.metadata, f'@0x{addr:x} embedded length={len(self)}>',
-			format.reset
-		)
+		details = f"embedded length={len(self)}"
+		terminal.print_type_tag('T_STRUCT', addr, details)
 	
 	def print_recursive(self, printer, depth):
 		"""Print this struct recursively."""
@@ -101,14 +97,10 @@ class RStructHeap(RStructBase):
 		return f"<T_STRUCT@0x{addr:x} heap length={len(self)}>"
 	
 	def print_to(self, terminal):
-		"""Return formatted struct representation."""
+		"""Print formatted struct representation."""
 		addr = int(self.value)
-		return terminal.print(
-			format.metadata, '<',
-			format.type, 'T_STRUCT',
-			format.metadata, f'@0x{addr:x} heap length={len(self)}>',
-			format.reset
-		)
+		details = f"heap length={len(self)}"
+		terminal.print_type_tag('T_STRUCT', addr, details)
 	
 	def print_recursive(self, printer, depth):
 		"""Print this struct recursively."""

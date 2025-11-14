@@ -1,6 +1,7 @@
-import debugger
+import sys
 import constants
 import format
+
 
 import rbasic
 import rfloat
@@ -35,19 +36,19 @@ class RImmediate:
 	def print_to(self, terminal):
 		"""Print this value with formatting to the given terminal."""
 		if self.val_int == 0:
-			return terminal.print(format.metadata, '<', format.type, 'T_FALSE', format.metadata, '>', format.reset)
+			terminal.print_type_tag('T_FALSE')
 		elif self.val_int == 0x04 or self.val_int == 0x08:
-			return terminal.print(format.metadata, '<', format.type, 'T_NIL', format.metadata, '>', format.reset)
+			terminal.print_type_tag('T_NIL')
 		elif self.val_int == 0x14:
-			return terminal.print(format.metadata, '<', format.type, 'T_TRUE', format.metadata, '>', format.reset)
+			terminal.print_type_tag('T_TRUE')
 		elif (self.val_int & 0x01) != 0:
 			# Fixnum - shift right to get actual value
-			tag = terminal.print(format.metadata, '<', format.type, 'T_FIXNUM', format.metadata, '>', format.reset)
-			num = terminal.print(format.number, str(self.val_int >> 1), format.reset)
-			return f"{tag} {num}"
+			terminal.print_type_tag('T_FIXNUM')
+			terminal.print(' ', end='')
+			terminal.print(format.number, str(self.val_int >> 1), format.reset, end='')
 		else:
 			# Unknown immediate
-			return f"<Immediate:0x{self.val_int:x}>"
+			terminal.print_type_tag('Immediate', self.val_int)
 	
 	def print_recursive(self, printer, depth):
 		"""Print this immediate value (no recursion needed)."""
@@ -138,7 +139,6 @@ def interpret(value):
 	Returns:
 		An instance of the appropriate type class (never None)
 	"""
-	import sys
 	val_int = int(value)
 	
 	# Check for immediate flonum (must be before fixnum check)

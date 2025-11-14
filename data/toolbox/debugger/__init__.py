@@ -70,6 +70,7 @@ read_cstring = _backend.read_cstring
 create_value = _backend.create_value
 create_value_from_int = _backend.create_value_from_int
 create_value_from_address = _backend.create_value_from_address
+register = _backend.register
 
 # Constants
 COMMAND_DATA = _backend.COMMAND_DATA
@@ -94,6 +95,7 @@ __all__ = [
 	'create_value',
 	'create_value_from_int',
 	'create_value_from_address',
+	'register',
 	'COMMAND_DATA',
 	'COMMAND_USER',
 ]

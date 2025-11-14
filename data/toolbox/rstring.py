@@ -71,15 +71,11 @@ class RStringBase:
 		addr = int(self.value)
 		storage = "embedded" if self._is_embedded() else "heap"
 		content = self.to_str()
-		tag = terminal.print(
-			format.metadata, '<',
-			format.type, 'T_STRING',
-			format.metadata, f'@0x{addr:x} {storage} length={self.length()}>',
-			format.reset
-		)
+		details = f"{storage} length={self.length()}"
+		terminal.print_type_tag('T_STRING', addr, details)
+		terminal.print(' ', end='')
 		# Use repr() to properly escape quotes, newlines, etc.
-		string_val = terminal.print(format.string, repr(content), format.reset)
-		return f"{tag} {string_val}"
+		terminal.print(format.string, repr(content), format.reset, end='')
 	
 	def print_recursive(self, printer, depth):
 		"""Print this string (no recursion needed for strings)."""

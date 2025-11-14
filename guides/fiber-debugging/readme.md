@@ -161,7 +161,7 @@ After switching to a fiber with `rb-fiber-scan-switch`, you can use standard GDB
 (gdb) bt                    # Show C backtrace
 (gdb) frame <n>             # Switch to specific frame
 (gdb) info locals           # Show local variables
-(gdb) rb-object-print $errinfo  # Print exception if present
+(gdb) rb-print $errinfo  # Print exception if present
 ~~~
 
 The fiber switch command sets up several convenience variables:

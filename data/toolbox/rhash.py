@@ -51,12 +51,8 @@ class RHashSTTable(RHashBase):
 	def print_to(self, terminal):
 		"""Print this hash with formatting."""
 		addr = int(self.value)
-		return terminal.print(
-			format.metadata, '<', 
-			format.type, 'T_HASH',
-			format.metadata, f'@0x{addr:x} ST-Table entries={self.size()}>',
-			format.reset
-		)
+		details = f"ST-Table entries={self.size()}"
+		terminal.print_type_tag('T_HASH', addr, details)
 	
 	def print_recursive(self, printer, depth):
 		"""Print this hash recursively."""
@@ -121,12 +117,8 @@ class RHashARTable(RHashBase):
 	def print_to(self, terminal):
 		"""Print this hash with formatting."""
 		addr = int(self.value)
-		return terminal.print(
-			format.metadata, '<',
-			format.type, 'T_HASH',
-			format.metadata, f'@0x{addr:x} AR-Table size={self.size()} bound={self.bound()}>',
-			format.reset
-		)
+		details = f"AR-Table size={self.size()} bound={self.bound()}"
+		terminal.print_type_tag('T_HASH', addr, details)
 	
 	def print_recursive(self, printer, depth):
 		"""Print this hash recursively."""

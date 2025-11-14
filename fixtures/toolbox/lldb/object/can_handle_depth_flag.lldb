@@ -3,7 +3,7 @@
 command script import data/toolbox/init.py
 
 script print("===TOOLBOX-OUTPUT-START===")
-rb-object-print 85 --depth 3
+rb-print 85 --depth 3
 script print("===TOOLBOX-OUTPUT-END===")
 
 quit

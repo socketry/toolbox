@@ -31,15 +31,11 @@ class RBignumObject:
 			return f"<T_BIGNUM@0x{addr:x} heap length={len(self)}>"
 	
 	def print_to(self, terminal):
-		"""Return formatted bignum representation."""
+		"""Print formatted bignum representation."""
 		addr = int(self.value)
 		storage = "embedded" if self.is_embedded() else "heap"
-		return terminal.print(
-			format.metadata, '<',
-			format.type, 'T_BIGNUM',
-			format.metadata, f'@0x{addr:x} {storage} length={len(self)}>',
-			format.reset
-		)
+		details = f"{storage} length={len(self)}"
+		terminal.print_type_tag('T_BIGNUM', addr, details)
 	
 	def print_recursive(self, printer, depth):
 		"""Print this bignum (no recursion needed)."""

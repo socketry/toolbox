@@ -19,7 +19,7 @@ Please see the [project documentation](https://socketry.github.io/toolbox/) for 
 
   - [Getting Started](https://socketry.github.io/toolbox/guides/getting-started/index) - This guide explains how to install and use Toolbox for debugging Ruby programs and core dumps with GDB or LLDB.
 
-  - [Object Inspection](https://socketry.github.io/toolbox/guides/object-inspection/index) - This guide explains how to use `rb-object-print` to inspect Ruby objects, hashes, arrays, and structs in GDB.
+  - [Object Inspection](https://socketry.github.io/toolbox/guides/object-inspection/index) - This guide explains how to use `rb-print` to inspect Ruby objects, hashes, arrays, and structs in GDB.
 
   - [Stack Inspection](https://socketry.github.io/toolbox/guides/stack-inspection/index) - This guide explains how to inspect both Ruby VM stacks and native C stacks when debugging Ruby programs.
 

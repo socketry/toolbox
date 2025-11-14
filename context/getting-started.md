@@ -63,7 +63,7 @@ Status: ✓ Installed
 Test that extensions load automatically:
 
 ~~~ bash
-$ gdb --batch -ex "help rb-object-print"
+$ gdb --batch -ex "help rb-print"
 Recursively print Ruby hash and array structures...
 ~~~
 
@@ -88,7 +88,7 @@ This removes the source line from your `~/.gdbinit` or `~/.lldbinit`.
 Ruby GDB provides specialized commands for debugging Ruby at multiple levels:
 
 - **Context Setup** (`rb-context`) - Get current execution context and set up convenience variables
-- **Object Inspection** (`rb-object-print`) - View Ruby objects, hashes, arrays, and structs with proper formatting
+- **Object Inspection** (`rb-print`) - View Ruby objects, hashes, arrays, and structs with proper formatting
 - **Fiber Debugging** (`rb-fiber-*`) - Scan heap for fibers, inspect state, and switch contexts
 - **Stack Analysis** (`rb-stack-trace`) - Examine combined VM (Ruby) and C (native) stack frames
 - **Heap Navigation** (`rb-heap-scan`) - Scan the Ruby heap to find objects by type
@@ -132,7 +132,7 @@ Diagnose the issue (extensions load automatically if installed):
 (gdb) rb-fiber-scan-heap                 # Scan heap for all fibers
 (gdb) rb-fiber-scan-stack-trace-all      # Show backtraces for all fibers
 (gdb) rb-fiber-scan-switch 0             # Switch to main fiber
-(gdb) rb-object-print $errinfo --depth 2 # Print exception (now $errinfo is set)
+(gdb) rb-print $errinfo --depth 2 # Print exception (now $errinfo is set)
 (gdb) rb-heap-scan --type RUBY_T_HASH --limit 10  # Find hashes
 ~~~
 
@@ -146,7 +146,7 @@ When a Ruby exception occurs, you can inspect it in detail:
 (gdb) break rb_exc_raise
 (gdb) run
 (gdb) rb-context
-(gdb) rb-object-print $errinfo --depth 2
+(gdb) rb-print $errinfo --depth 2
 ~~~
 
 This shows the exception class, message, and any nested structures. The `rb-context` command displays the current execution context and sets up `$ec`, `$cfp`, and `$errinfo` convenience variables.
@@ -167,7 +167,7 @@ When working with fibers, you often need to see what each fiber is doing:
 Ruby hashes and arrays can contain nested structures:
 
 ~~~
-(gdb) rb-object-print $some_hash --depth 2
+(gdb) rb-print $some_hash --depth 2
 <T_HASH@...>
 [   0] K: <T_SYMBOL> :name
        V: <T_STRING@...> "Alice"
@@ -197,4 +197,4 @@ On macOS with LLDB and Ruby <= 3.4.x, some commands including `rb-fiber-scan-hea
 **Workarounds:**
 - Use Ruby head: `ruby-install ruby-head -- CFLAGS="-g -O0"`
 - Use GDB instead of LLDB (works with Ruby 3.4.x)
-- Other commands like `rb-object-print`, `rb-stack-trace`, `rb-context` work fine
+- Other commands like `rb-print`, `rb-stack-trace`, `rb-context` work fine

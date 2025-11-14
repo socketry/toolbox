@@ -1,6 +1,8 @@
 import debugger
 import sys
+import command
 import constants
+import format
 
 # Constants
 RBASIC_FLAGS_TYPE_MASK = 0x1f
@@ -471,7 +473,7 @@ class RubyHeap:
 		return objects
 
 
-class RubyHeapScanCommand(debugger.Command):
+class RubyHeapScanHandler:
 	"""Scan the Ruby heap for objects, optionally filtered by type.
 	
 	Usage: rb-heap-scan [--type TYPE] [--limit N] [--from $heap]
@@ -501,23 +503,21 @@ class RubyHeapScanCommand(debugger.Command):
 	  rb-heap-scan --from $heap         # Continue from last scan
 	"""
 	
-	def __init__(self):
-		super(RubyHeapScanCommand, self).__init__("rb-heap-scan", debugger.COMMAND_USER)
-	
-	def usage(self):
-		"""Print usage information."""
-		print("Usage: rb-heap-scan [--type TYPE] [--limit N] [--from $heap]")
-		print("Examples:")
-		print("  rb-heap-scan --type RUBY_T_STRING              # Find up to 10 strings")
-		print("  rb-heap-scan --type RUBY_T_ARRAY --limit 5     # Find up to 5 arrays")
-		print("  rb-heap-scan --type 0x05 --limit 100           # Find up to 100 T_STRING objects")
-		print("  rb-heap-scan --limit 20                        # Scan 20 objects (any type)")
-		print("  rb-heap-scan --type RUBY_T_STRING --from $heap # Continue from last scan")
-		print()
-		print("Pagination:")
-		print("  The address of the last object is saved to $heap for pagination:")
-		print("    rb-heap-scan --type RUBY_T_STRING --limit 10        # First page")
-		print("    rb-heap-scan --type RUBY_T_STRING --from $heap      # Next page")
+	USAGE = command.Usage(
+		summary="Scan the Ruby heap for objects, optionally filtered by type",
+		parameters=[],
+		options={
+			'type': (str, None, 'Filter by Ruby type (e.g., RUBY_T_STRING, RUBY_T_ARRAY, or 0x05)'),
+			'limit': (int, 10, 'Maximum objects to find'),
+			'from': (str, None, 'Start address for pagination (use $heap)')
+		},
+		flags=[],
+		examples=[
+			("rb-heap-scan --type RUBY_T_STRING", "Find up to 10 strings"),
+			("rb-heap-scan --type RUBY_T_ARRAY --limit 20", "Find first 20 arrays"),
+			("rb-heap-scan --from $heap", "Continue from last scan (pagination)")
+		]
+	)
 	
 	def _parse_type(self, type_arg):
 		"""Parse a type argument and return the type value.
@@ -551,13 +551,9 @@ class RubyHeapScanCommand(debugger.Command):
 		
 		return type_value
 	
-	def invoke(self, arg, from_tty):
+	def invoke(self, arguments, terminal):
 		"""Execute the heap scan command."""
 		try:
-			# Parse arguments
-			import command
-			arguments = command.parse_arguments(arg if arg else "")
-			
 			# Check if we're continuing from a previous scan
 			from_option = arguments.get_option('from')
 			if from_option is not None:
@@ -616,20 +612,14 @@ class RubyHeapScanCommand(debugger.Command):
 					print("(You may have reached the end of the heap)")
 				return
 			
-			# Import format for terminal output
-			import format
-			terminal = format.create_terminal(from_tty)
-			
-			# Import value module for interpretation
 			import value as value_module
 			
 			print(f"Found {len(objects)} object(s):")
 			print()
 			
 			for i, obj in enumerate(objects):
-				obj_int = int(obj)
-				
 				# Set as convenience variable
+				obj_int = int(obj)
 				var_name = f"heap{i}"
 				debugger.set_convenience_variable(var_name, obj)
 				
@@ -637,48 +627,48 @@ class RubyHeapScanCommand(debugger.Command):
 				try:
 					interpreted = value_module.interpret(obj)
 					
-					print(terminal.print(
+					terminal.print(
 						format.metadata, f"  [{i}] ",
 						format.dim, f"${var_name} = ",
 						format.reset, interpreted
-					))
+					)
 				except Exception as e:
-					print(terminal.print(
+					terminal.print(
 						format.metadata, f"  [{i}] ",
 						format.dim, f"${var_name} = ",
 						format.error, f"<error: {e}>"
-					))
+					)
 			
 			print()
-			print(terminal.print(
+			terminal.print(
 				format.dim, 
 				f"Objects saved in $heap0 through $heap{len(objects)-1}",
 				format.reset
-			))
+			)
 			
 			# Save next address to $heap for pagination
 			if next_address is not None:
 				# Save the next address to continue from
 				void_ptr_type = constants.type_struct('void').pointer()
 				debugger.set_convenience_variable('heap', debugger.create_value(next_address, void_ptr_type))
-				print(terminal.print(
+				terminal.print(
 					format.dim,
 					f"Next scan address saved to $heap: 0x{next_address:016x}",
 					format.reset
-				))
-				print(terminal.print(
+				)
+				terminal.print(
 					format.dim,
 					f"Run 'rb-heap-scan --type {type_option if type_option else '...'} --from $heap' for next page",
 					format.reset
-				))
+				)
 			else:
 				# Reached the end of the heap - unset $heap so next scan starts fresh
 				debugger.set_convenience_variable('heap', None)
-				print(terminal.print(
+				terminal.print(
 					format.dim,
 					f"Reached end of heap (no more objects to scan)",
 					format.reset
-				))
+				)
 			
 		except Exception as e:
 			print(f"Error: {e}")
@@ -687,4 +677,4 @@ class RubyHeapScanCommand(debugger.Command):
 
 
 # Register commands
-RubyHeapScanCommand()
+debugger.register("rb-heap-scan", RubyHeapScanHandler, usage=RubyHeapScanHandler.USAGE)

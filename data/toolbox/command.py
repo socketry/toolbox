@@ -19,6 +19,231 @@ class Arguments:
 		"""Get an option value with optional default"""
 		return self.options.get(option_name, default)
 
+
+class Usage:
+	"""Command specification DSL for declarative command interfaces.
+	
+	Defines what parameters, options, and flags a command accepts,
+	enabling validation and help text generation.
+	
+	Example:
+		usage = Usage(
+			summary="Print Ruby objects with recursion",
+			parameters=['value'],
+			options={'depth': (int, 1), 'limit': (int, None)},
+			flags=['debug', 'verbose']
+		)
+		
+		arguments = usage.parse("$var --depth 3 --debug")
+		# arguments.expressions = ['$var']
+		# arguments.options = {'depth': 3}
+		# arguments.flags = {'debug'}
+	"""
+	
+	def __init__(self, summary, parameters=None, options=None, flags=None, examples=None):
+		"""Define command interface.
+		
+		Args:
+			summary: One-line command description
+			parameters: List of parameter names or tuples (name, description)
+			options: Dict of {name: (type, default, description)}
+			flags: List of flag names or tuples (name, description)
+			examples: List of example command strings with descriptions
+		
+		Example:
+			Usage(
+				summary="Scan heap for objects",
+				parameters=[('type_name', 'Ruby type to search for')],
+				options={
+					'limit': (int, None, 'Maximum objects to find'),
+					'depth': (int, 1, 'Recursion depth')
+				},
+				flags=[
+					('terminated', 'Include terminated fibers'),
+					('cache', 'Use cached results')
+				],
+				examples=[
+					("rb-heap-scan --type RUBY_T_STRING", "Find all strings"),
+					("rb-heap-scan --type RUBY_T_HASH --limit 10", "Find first 10 hashes")
+				]
+			)
+		"""
+		self.summary = summary
+		self.parameters = self._normalize_params(parameters or [])
+		self.options = options or {}
+		self.flags = self._normalize_flags(flags or [])
+		self.examples = examples or []
+	
+	def _normalize_params(self, params):
+		"""Normalize parameters to list of (name, description) tuples."""
+		normalized = []
+		for param in params:
+			if isinstance(param, tuple):
+				normalized.append(param)
+			else:
+				normalized.append((param, None))
+		return normalized
+	
+	def _normalize_flags(self, flags):
+		"""Normalize flags to list of (name, description) tuples."""
+		normalized = []
+		for flag in flags:
+			if isinstance(flag, tuple):
+				normalized.append(flag)
+			else:
+				normalized.append((flag, None))
+		return normalized
+	
+	def parse(self, argument_string):
+		"""Parse and validate command arguments.
+		
+		Args:
+			argument_string: Raw argument string from debugger
+		
+		Returns:
+			Arguments object with validated and type-converted values
+		
+		Raises:
+			ValueError: If validation fails (wrong parameter count, invalid types, etc.)
+		"""
+		# Use existing parser to extract raw arguments
+		arguments = parse_arguments(argument_string)
+		
+		# Validate parameter count
+		if len(arguments.expressions) != len(self.parameters):
+			if len(self.parameters) == 0 and len(arguments.expressions) > 0:
+				raise ValueError(f"Command takes no parameters, got {len(arguments.expressions)}")
+			elif len(self.parameters) == 1:
+				raise ValueError(f"Command requires 1 parameter, got {len(arguments.expressions)}")
+			else:
+				raise ValueError(f"Command requires {len(self.parameters)} parameters, got {len(arguments.expressions)}")
+		
+		# Validate and convert option types
+		converted_options = {}
+		for option_name, option_value in arguments.options.items():
+			if option_name not in self.options:
+				raise ValueError(f"Unknown option: --{option_name}")
+			
+			# Unpack option spec (handle 2-tuple or 3-tuple)
+			opt_spec = self.options[option_name]
+			option_type = opt_spec[0]
+			option_default = opt_spec[1]
+			
+			# Convert to specified type
+			try:
+				if option_type == int:
+					converted_options[option_name] = int(option_value)
+				elif option_type == str:
+					converted_options[option_name] = str(option_value)
+				elif option_type == bool:
+					converted_options[option_name] = bool(option_value)
+				else:
+					# Custom type converter
+					converted_options[option_name] = option_type(option_value)
+			except (ValueError, TypeError) as e:
+				raise ValueError(f"Invalid value for --{option_name}: {option_value} (expected {option_type.__name__})")
+		
+		# Add defaults for missing options
+		for option_name, opt_spec in self.options.items():
+			option_default = opt_spec[1]
+			if option_name not in converted_options and option_default is not None:
+				converted_options[option_name] = option_default
+		
+		# Validate flags
+		flag_names = {flag[0] for flag in self.flags}
+		for flag_name in arguments.flags:
+			if flag_name not in flag_names:
+				raise ValueError(f"Unknown flag: --{flag_name}")
+		
+		# Return new Arguments with converted options
+		return Arguments(arguments.expressions, arguments.flags, converted_options)
+	
+	def print_to(self, terminal, command_name):
+		"""Print help text from usage specification.
+		
+		Args:
+			terminal: Terminal for colored output
+			command_name: Name of the command (e.g., "rb-print")
+		"""
+		import format as fmt
+		
+		# Summary with color
+		terminal.print(fmt.bold, self.summary, fmt.reset)
+		terminal.print()
+		
+		# Print usage line
+		terminal.print("Usage: ", end='')
+		terminal.print(fmt.bold, command_name, fmt.reset, end='')
+		
+		for param_name, _ in self.parameters:
+			terminal.print(' ', end='')
+			terminal.print(fmt.placeholder, f"<{param_name}>", fmt.reset, end='')
+		
+		# Add option placeholders
+		for option_name in self.options.keys():
+			terminal.print(' ', end='')
+			terminal.print(fmt.placeholder, f"[--{option_name} N]", fmt.reset, end='')
+		
+		# Add flag placeholders
+		for flag_name, _ in self.flags:
+			terminal.print(' ', end='')
+			terminal.print(fmt.placeholder, f"[--{flag_name}]", fmt.reset, end='')
+		
+		terminal.print()
+		terminal.print()
+		
+		# Parameter descriptions
+		if self.parameters:
+			terminal.print(fmt.title, "Parameters:", fmt.reset)
+			
+			for param_name, param_desc in self.parameters:
+				terminal.print("  ", fmt.symbol, param_name, fmt.reset, end='')
+				if param_desc:
+					terminal.print(f" - {param_desc}")
+				else:
+					terminal.print()
+			terminal.print()
+		
+		# Option descriptions
+		if self.options:
+			terminal.print(fmt.title, "Options:", fmt.reset)
+			
+			for option_name, opt_spec in self.options.items():
+				opt_type, opt_default = opt_spec[0], opt_spec[1]
+				opt_desc = opt_spec[2] if len(opt_spec) > 2 else None
+				
+				type_str = opt_type.__name__ if hasattr(opt_type, '__name__') else str(opt_type)
+				default_str = f" (default: {opt_default})" if opt_default is not None else ""
+				
+				terminal.print("  ", fmt.symbol, f"--{option_name}", fmt.reset, end='')
+				terminal.print(fmt.placeholder, f" <{type_str}>", fmt.reset, end='')
+				terminal.print(default_str)
+				
+				if opt_desc:
+					terminal.print(f"      {opt_desc}")
+			terminal.print()
+		
+		# Flag descriptions
+		if self.flags:
+			terminal.print(fmt.title, "Flags:", fmt.reset)
+			
+			for flag_name, flag_desc in self.flags:
+				terminal.print("  ", fmt.symbol, f"--{flag_name}", fmt.reset, end='')
+				if flag_desc:
+					terminal.print(f" - {flag_desc}")
+				else:
+					terminal.print()
+			terminal.print()
+		
+		# Examples section
+		if self.examples:
+			terminal.print(fmt.title, "Examples:", fmt.reset)
+			
+			for example_cmd, example_desc in self.examples:
+				terminal.print(fmt.example, f"  {example_cmd}", fmt.reset)
+				if example_desc:
+					terminal.print(f"      {example_desc}")
+
 class ArgumentParser:
 	"""Parse GDB command arguments handling nested brackets, quotes, and flags.
 	

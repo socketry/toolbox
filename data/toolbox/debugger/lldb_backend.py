@@ -6,6 +6,7 @@ would require more extensive testing and edge case handling.
 """
 
 import lldb
+import format
 
 # Command categories (LLDB doesn't have exact equivalents, using symbolic constants)
 COMMAND_DATA = 0
@@ -884,5 +885,73 @@ def create_value_from_int(int_value, value_type):
 	)
 	
 	return Value(result)
+
+
+def register(name, handler_class, usage=None, category=COMMAND_USER):
+	"""Register a command with LLDB using a handler class.
+	
+	This creates a wrapper Command that handles parsing, terminal setup,
+	and delegates to the handler class for actual command logic.
+	
+	Args:
+		name: Command name (e.g., "rb-object-print")
+		handler_class: Class to instantiate for handling the command
+		usage: Optional command.Usage specification for validation/help
+		category: Command category (COMMAND_USER, etc.)
+	
+	Example:
+		class PrintHandler:
+			def invoke(self, arguments, terminal):
+				depth = arguments.get_option('depth', 1)
+				print(f"Depth: {depth}")
+		
+		usage = command.Usage(
+			summary="Print something",
+			options={'depth': (int, 1)},
+			flags=['debug']
+		)
+		debugger.register("my-print", PrintHandler, usage=usage)
+	
+	Returns:
+		The registered Command instance
+	"""
+	class RegisteredCommand(Command):
+		def __init__(self):
+			super(RegisteredCommand, self).__init__(name, category)
+			self.usage_spec = usage
+			self.handler_class = handler_class
+		
+		def invoke(self, arg, from_tty):
+			"""LLDB entry point - parses arguments and delegates to handler."""
+			# Create terminal first (needed for help text)
+			import format
+			terminal = format.create_terminal(from_tty)
+			
+			try:
+				# Parse and validate arguments
+				if self.usage_spec:
+					arguments = self.usage_spec.parse(arg if arg else "")
+				else:
+					# Fallback to basic parsing without validation
+					import command
+					arguments = command.parse_arguments(arg if arg else "")
+				
+				# Instantiate handler and invoke
+				handler = self.handler_class()
+				handler.invoke(arguments, terminal)
+				
+			except ValueError as e:
+				# Validation error - show colored help
+				print(f"Error: {e}")
+				if self.usage_spec:
+					print()
+					self.usage_spec.print_to(terminal, name)
+			except Exception as e:
+				print(f"Error: {e}")
+				import traceback
+				traceback.print_exc()
+	
+	# Instantiate and register the command with LLDB
+	return RegisteredCommand()
 
 
