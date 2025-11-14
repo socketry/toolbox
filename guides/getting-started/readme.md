@@ -15,7 +15,7 @@ $ gem install toolbox
 Install the GDB extensions (automatically adds to `~/.gdbinit`):
 
 ~~~ bash
-$ bake toolbox:gdb:install
+$ bake -g toolbox toolbox:gdb:install
 ~~~
 
 This adds a single line to your `~/.gdbinit` that sources the extensions from the gem's data directory. The extensions will then load automatically every time you start GDB.
@@ -23,7 +23,7 @@ This adds a single line to your `~/.gdbinit` that sources the extensions from th
 To install to a custom `.gdbinit` location:
 
 ~~~ bash
-$ bake toolbox:gdb:install gdbinit=/path/to/custom/gdbinit
+$ bake -g toolbox toolbox:gdb:install gdbinit=/path/to/custom/gdbinit
 ~~~
 
 ### Installing LLDB Extensions
@@ -31,7 +31,7 @@ $ bake toolbox:gdb:install gdbinit=/path/to/custom/gdbinit
 Install the LLDB extensions (automatically adds to `~/.lldbinit`):
 
 ~~~ bash
-$ bake toolbox:lldb:install
+$ bake -g toolbox toolbox:lldb:install
 ~~~
 
 This adds a command script import line to your `~/.lldbinit` that loads the extensions from the gem's data directory. The extensions will then load automatically every time you start LLDB.
@@ -39,7 +39,7 @@ This adds a command script import line to your `~/.lldbinit` that loads the exte
 To install to a custom `.lldbinit` location:
 
 ~~~ bash
-$ bake toolbox:lldb:install lldbinit=/path/to/custom/lldbinit
+$ bake -g toolbox toolbox:lldb:install lldbinit=/path/to/custom/lldbinit
 ~~~
 
 ### Verifying Installation
@@ -47,7 +47,7 @@ $ bake toolbox:lldb:install lldbinit=/path/to/custom/lldbinit
 Check GDB installation status:
 
 ~~~ bash
-$ bake toolbox:gdb:info
+$ bake -g toolbox toolbox:gdb:info
 Ruby Toolbox GDB Extensions v0.1.0
 Status: ✓ Installed
 ~~~
@@ -55,7 +55,7 @@ Status: ✓ Installed
 Check LLDB installation status:
 
 ~~~ bash
-$ bake toolbox:lldb:info
+$ bake -g toolbox toolbox:lldb:info
 Ruby Toolbox LLDB Extensions v0.1.0
 Status: ✓ Installed
 ~~~
@@ -72,16 +72,16 @@ Recursively print Ruby hash and array structures...
 To remove the GDB extensions:
 
 ~~~ bash
-$ bake toolbox:gdb:uninstall
+$ bake -g toolbox toolbox:gdb:uninstall
 ~~~
 
 To remove the LLDB extensions:
 
 ~~~ bash
-$ bake toolbox:lldb:uninstall
+$ bake -g toolbox toolbox:lldb:uninstall
 ~~~
 
-This removes the source line from your `~/.gdbinit`.
+This removes the source line from your `~/.gdbinit` or `~/.lldbinit`.
 
 ## Core Concepts
 
@@ -176,3 +176,25 @@ Ruby hashes and arrays can contain nested structures:
 ~~~
 
 The `--depth` flag controls how deep to recurse into nested objects.
+
+## Requirements
+
+- GDB with Python support (GDB 7.0+) or LLDB with Python support.
+- Ruby 3.3+ recommended.
+
+### Platform Support
+
+- **Linux**: Full support with all features (GDB or LLDB).
+- **macOS**: 
+  - Ruby head: Full support.
+  - Ruby 3.4.x: Limited support (see below).
+- **BSD**: Should work similar to Linux (untested).
+
+### macOS + Ruby 3.4.x Limitation
+
+On macOS with LLDB and Ruby <= 3.4.x, some commands including `rb-fiber-scan-heap` will not work due to a `dsymutil` bug that drops `struct RTypedData` from debug symbols. This appears fixed in `ruby-head`.
+
+**Workarounds:**
+- Use Ruby head: `ruby-install ruby-head -- CFLAGS="-g -O0"`
+- Use GDB instead of LLDB (works with Ruby 3.4.x)
+- Other commands like `rb-object-print`, `rb-stack-trace`, `rb-context` work fine
