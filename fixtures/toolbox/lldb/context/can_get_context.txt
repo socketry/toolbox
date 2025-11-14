@@ -1,8 +1,10 @@
 Execution Context:
-  $ec = <rb_execution_context_t *@...>
-  VM Stack: <VALUE *@...> size=...
-  $cfp = <rb_control_frame_t *@...>
+  $ec = <rb_execution_context_t@...>
+  VM Stack: <VALUE@...>
+  $cfp = <rb_control_frame_t@...>
   Exception: None
+  Tag: <rb_vm_tag@...>
+    $retval available (in ensure block)
 
 Convenience variables set:
   $ec      - Execution context
@@ -12,4 +14,3 @@ Now you can use:
   rb-object-print $errinfo
   rb-object-print $ec->cfp->sp[-1]
   rb-stack-trace
-
