@@ -54,16 +54,11 @@ class RFloatObject:
 		return f"<T_FLOAT@0x{addr:x}> {self.float_value()}"
 	
 	def print_to(self, terminal):
-		"""Return formatted float representation."""
+		"""Print formatted float representation."""
 		addr = int(self.value.address)
-		tag = terminal.print(
-			format.metadata, '<',
-			format.type, 'T_FLOAT',
-			format.metadata, f'@0x{addr:x}>',
-			format.reset
-		)
-		num_val = terminal.print(format.number, str(self.float_value()), format.reset)
-		return f"{tag} {num_val}"
+		terminal.print_type_tag('T_FLOAT', addr)
+		terminal.print(' ', end='')
+		terminal.print(format.number, str(self.float_value()), format.reset, end='')
 	
 	def print_recursive(self, printer, depth):
 		"""Print this float (no recursion needed)."""

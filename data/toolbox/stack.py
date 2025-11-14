@@ -8,7 +8,7 @@ import command
 import constants
 import context
 import format
-import value
+import value as rvalue
 import rstring
 import rexception
 import rsymbol
@@ -104,7 +104,7 @@ class RubyStackPrinter:
             errinfo_int = int(errinfo_val)
             
             # Check if it's a real exception object (not nil or other immediate/special value)
-            if not value.is_immediate(errinfo_val) and not value.is_nil(errinfo_val):
+            if not rvalue.is_immediate(errinfo_val) and not rvalue.is_nil(errinfo_val):
                 try:
                     exc_class = self._get_exception_class(errinfo_val)
                     exc_msg = self._get_exception_message(errinfo_val)
@@ -392,7 +392,7 @@ class RubyStackPrinter:
         """
         try:
             # Use value.py's interpret function to get the typed object
-            obj = value.interpret(val)
+            obj = rvalue.interpret(val)
             
             # Get string representation
             obj_str = str(obj)
@@ -498,8 +498,8 @@ class RubyStackPrinter:
             String representation
         """
         try:
-            # Use the value.interpret infrastructure for proper type handling
-            obj = value.interpret(val)
+            # Use the rvalue.interpret infrastructure for proper type handling
+            obj = rvalue.interpret(val)
             
             # For strings, get the actual content
             if hasattr(obj, 'to_str'):
@@ -532,7 +532,7 @@ class RubyStackPrinter:
         """
         try:
             # Interpret the pathobj to get its type
-            obj = value.interpret(pathobj)
+            obj = rvalue.interpret(pathobj)
             
             # If it's an array, get the first element (the path)
             if hasattr(obj, 'length') and hasattr(obj, 'get_item'):

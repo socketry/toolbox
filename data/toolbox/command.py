@@ -150,8 +150,9 @@ class Usage:
 				converted_options[option_name] = option_default
 		
 		# Validate flags
+		flag_names = {flag[0] for flag in self.flags}
 		for flag_name in arguments.flags:
-			if flag_name not in self.flags:
+			if flag_name not in flag_names:
 				raise ValueError(f"Unknown flag: --{flag_name}")
 		
 		# Return new Arguments with converted options

@@ -2,6 +2,7 @@ import debugger
 import sys
 import command
 import constants
+import format
 
 # Constants
 RBASIC_FLAGS_TYPE_MASK = 0x1f
@@ -550,13 +551,9 @@ class RubyHeapScanHandler:
 		
 		return type_value
 	
-	def invoke(self, arg, from_tty):
+	def invoke(self, arguments, terminal):
 		"""Execute the heap scan command."""
 		try:
-			# Parse arguments
-			import command
-			arguments = command.parse_arguments(arg if arg else "")
-			
 			# Check if we're continuing from a previous scan
 			from_option = arguments.get_option('from')
 			if from_option is not None:
@@ -615,20 +612,14 @@ class RubyHeapScanHandler:
 					print("(You may have reached the end of the heap)")
 				return
 			
-			# Import format for terminal output
-			import format
-			terminal = format.create_terminal(from_tty)
-			
-			# Import value module for interpretation
 			import value as value_module
 			
 			print(f"Found {len(objects)} object(s):")
 			print()
 			
 			for i, obj in enumerate(objects):
-				obj_int = int(obj)
-				
 				# Set as convenience variable
+				obj_int = int(obj)
 				var_name = f"heap{i}"
 				debugger.set_convenience_variable(var_name, obj)
 				

@@ -1,6 +1,6 @@
 import debugger
 import constants
-import value
+import value as rvalue
 import rstring
 
 class RClass:
@@ -103,9 +103,9 @@ class RClass:
 					except:
 						classpath_val = None
 				
-				if classpath_val and int(classpath_val) != 0 and not value.is_nil(classpath_val):
+				if classpath_val and int(classpath_val) != 0 and not rvalue.is_nil(classpath_val):
 					# Decode the classpath string
-					class_name_obj = value.interpret(classpath_val)
+					class_name_obj = rvalue.interpret(classpath_val)
 					if hasattr(class_name_obj, 'to_str'):
 						class_name = class_name_obj.to_str()
 						if class_name and not class_name.startswith('<'):

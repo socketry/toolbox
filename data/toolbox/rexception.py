@@ -1,7 +1,7 @@
 import debugger
 import constants
 import format
-import value
+import value as rvalue
 import rstring
 import rclass
 
@@ -21,7 +21,7 @@ class RException:
 		self._message = None
 		
 		# Validate it's an object
-		if value.is_immediate(exception_value):
+		if rvalue.is_immediate(exception_value):
 			raise ValueError("Exception VALUE cannot be an immediate value")
 	
 	@property
@@ -116,7 +116,7 @@ def is_exception(val):
 	Returns:
 		True if the value appears to be an exception object, False otherwise
 	"""
-	if not value.is_object(val):
+	if not rvalue.is_object(val):
 		return False
 	
 	try:

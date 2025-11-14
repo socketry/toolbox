@@ -12,7 +12,7 @@ if debugger.DEBUGGER_NAME == 'gdb':
 # Import command parser
 import command
 import constants
-import value
+import value as rvalue
 import format
 import heap
 import rexception
@@ -162,7 +162,7 @@ class RubyFiber:
                 errinfo_val = self.ec['errinfo']
                 
                 # Only process if it's a real object (not nil or other immediate value)
-                if value.is_object(errinfo_val) and not value.is_nil(errinfo_val):
+                if rvalue.is_object(errinfo_val) and not rvalue.is_nil(errinfo_val):
                     try:
                         self._exception = rexception.RException(errinfo_val)
                     except Exception:
@@ -501,8 +501,8 @@ class RubyFiberScanSwitchHandler:
     def invoke(self, arguments, terminal):
         global _fiber_cache
 
-        if not arg or not arg.strip():
-            self.usage()
+        if not arguments.expressions or not arguments.expressions[0].strip():
+            command.print_usage(RubyFiberScanSwitchHandler.USAGE, terminal)
             return
 
         # Check if cache is populated
@@ -512,10 +512,10 @@ class RubyFiberScanSwitchHandler:
 
         # Parse index
         try:
-            index = int(arg.strip())
+            index = int(arguments.expressions[0].strip())
         except ValueError:
-            print(f"Error: Invalid index '{arg}'. Must be an integer.")
-            self.usage()
+            print(f"Error: Invalid index '{arguments.expressions[0]}'. Must be an integer.")
+            command.print_usage(RubyFiberScanSwitchHandler.USAGE, terminal)
             return
 
         # Validate index
@@ -532,7 +532,7 @@ class RubyFiberScanSwitchHandler:
         # Delegate to rb-fiber-switch command
         # This command manages the global _current_fiber state
         try:
-            debugger.execute(f"rb-fiber-switch 0x{int(fiber_value):x}", from_tty=from_tty)
+            RubyFiberSwitchHandler().invoke(command.Arguments([f"0x{int(fiber_value):x}"], {}, []), terminal)
         except debugger.Error as e:
             print(f"Error switching to fiber: {e}")
             import traceback
@@ -758,18 +758,13 @@ class RubyFiberSwitchHandler:
         if not is_special:
             debugger.set_convenience_variable('errinfo', errinfo_val)
 
-        # Create terminal for formatting
-        terminal = format.create_terminal(from_tty)
-
         # Print switch confirmation
         print(f"Switched to Fiber: ", end='')
         terminal.print_type_tag('T_DATA', int(fiber_value), None)
         print(' → ', end='')
         terminal.print_type_tag('struct rb_fiber_struct', fiber_obj.address, None)
         print()
-        print(f"  Status: {fiber_obj.status}")
-        
-        # Print exception if present (catch errors for terminated fibers)
+        print(f"  Status: {fiber_obj.status}")        # Print exception if present (catch errors for terminated fibers)
         try:
             exc_info = fiber_obj.exception_info
             if exc_info:
@@ -863,7 +858,7 @@ class RubyFiberScanStackTraceAllHandler:
                 print("-" * 80)
 
                 # Use stack.print_fiber_backtrace with the fiber pointer
-                stack.print_fiber_backtrace(fiber_obj.pointer, from_tty=from_tty)
+                stack.print_fiber_backtrace(fiber_obj.pointer)
                 
             except Exception as e:
                 print(f"\nFiber #{i}: VALUE 0x{int(fiber_value):x}")

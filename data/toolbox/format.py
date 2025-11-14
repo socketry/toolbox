@@ -6,7 +6,7 @@ less prominent and values more readable.
 """
 
 import sys
-import value
+import value as rvalue
 
 class Style:
 	"""Sentinel object representing a style."""
@@ -120,7 +120,7 @@ class XTerm(Text):
 			metadata: self.DIM,         # Type tag brackets <>
 			address: self.MAGENTA,      # Memory addresses in type tags
 			type: self.CYAN,            # Type names (T_ARRAY, VALUE, etc.)
-			value: '',
+			value_style: '',
 			string: self.GREEN,
 			number: self.CYAN,
 			symbol: self.YELLOW,
@@ -202,5 +202,5 @@ class Printer:
 		value_int = int(ruby_value)
 		self.debug(f"print_value: value=0x{value_int:x}, depth={depth}")
 		
-		ruby_object = value.interpret(ruby_value)
+		ruby_object = rvalue.interpret(ruby_value)
 		ruby_object.print_recursive(self, depth)

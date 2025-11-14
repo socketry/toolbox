@@ -6,7 +6,7 @@ import sys
 # Import utilities
 import command
 import constants
-import value
+import value as rvalue
 import rstring
 import rarray
 import rhash
@@ -31,9 +31,9 @@ class RubyObjectPrinter:
 			('debug', 'Show internal structure and debug information')
 		],
 		examples=[
-			("rb-inspect $errinfo", "Print exception object"),
-			("rb-inspect $ec->storage --depth 3", "Print fiber storage with depth 3"),
-			("rb-inspect $ec->cfp->sp[-1] --debug", "Print top of stack with debug info")
+			("rb-print $errinfo", "Print exception object"),
+			("rb-print $ec->storage --depth 3", "Print fiber storage with depth 3"),
+			("rb-print $ec->cfp->sp[-1] --debug", "Print top of stack with debug info")
 		]
 	)
 	
@@ -63,7 +63,7 @@ class RubyObjectPrinter:
 				ruby_value = debugger.parse_and_eval(expression)
 				
 				# Interpret the value and let it print itself recursively
-				ruby_object = value.interpret(ruby_value)
+				ruby_object = rvalue.interpret(ruby_value)
 				ruby_object.print_recursive(printer, max_depth)
 			except debugger.Error as e:
 				print(f"Error evaluating expression '{expression}': {e}")

@@ -3,7 +3,7 @@
 import debugger
 import command
 import format
-import value
+import value as rvalue
 import rexception
 
 
@@ -194,7 +194,7 @@ class RubyContext:
             terminal.print(f"  $cfp = <unavailable>")
         
         # Storage info
-        if storage is not None and not value.is_nil(storage):
+        if storage is not None and not rvalue.is_nil(storage):
             terminal.print(f"  Storage: ", end='')
             terminal.print_type_tag('VALUE', int(storage), None)
             terminal.print()
@@ -330,7 +330,7 @@ class RubyContextStorageHandler:
                 return
             
             # Check if it's nil
-            if value.is_nil(storage_val):
+            if rvalue.is_nil(storage_val):
                 print("Fiber storage: nil")
                 return
             
