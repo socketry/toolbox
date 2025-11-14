@@ -1,5 +1,6 @@
 import debugger
 import sys
+import command
 import constants
 
 # Constants
@@ -471,7 +472,7 @@ class RubyHeap:
 		return objects
 
 
-class RubyHeapScanCommand(debugger.Command):
+class RubyHeapScanHandler:
 	"""Scan the Ruby heap for objects, optionally filtered by type.
 	
 	Usage: rb-heap-scan [--type TYPE] [--limit N] [--from $heap]
@@ -501,23 +502,21 @@ class RubyHeapScanCommand(debugger.Command):
 	  rb-heap-scan --from $heap         # Continue from last scan
 	"""
 	
-	def __init__(self):
-		super(RubyHeapScanCommand, self).__init__("rb-heap-scan", debugger.COMMAND_USER)
-	
-	def usage(self):
-		"""Print usage information."""
-		print("Usage: rb-heap-scan [--type TYPE] [--limit N] [--from $heap]")
-		print("Examples:")
-		print("  rb-heap-scan --type RUBY_T_STRING              # Find up to 10 strings")
-		print("  rb-heap-scan --type RUBY_T_ARRAY --limit 5     # Find up to 5 arrays")
-		print("  rb-heap-scan --type 0x05 --limit 100           # Find up to 100 T_STRING objects")
-		print("  rb-heap-scan --limit 20                        # Scan 20 objects (any type)")
-		print("  rb-heap-scan --type RUBY_T_STRING --from $heap # Continue from last scan")
-		print()
-		print("Pagination:")
-		print("  The address of the last object is saved to $heap for pagination:")
-		print("    rb-heap-scan --type RUBY_T_STRING --limit 10        # First page")
-		print("    rb-heap-scan --type RUBY_T_STRING --from $heap      # Next page")
+	USAGE = command.Usage(
+		summary="Scan the Ruby heap for objects, optionally filtered by type",
+		parameters=[],
+		options={
+			'type': (str, None, 'Filter by Ruby type (e.g., RUBY_T_STRING, RUBY_T_ARRAY, or 0x05)'),
+			'limit': (int, 10, 'Maximum objects to find'),
+			'from': (str, None, 'Start address for pagination (use $heap)')
+		},
+		flags=[],
+		examples=[
+			("rb-heap-scan --type RUBY_T_STRING", "Find up to 10 strings"),
+			("rb-heap-scan --type RUBY_T_ARRAY --limit 20", "Find first 20 arrays"),
+			("rb-heap-scan --from $heap", "Continue from last scan (pagination)")
+		]
+	)
 	
 	def _parse_type(self, type_arg):
 		"""Parse a type argument and return the type value.
@@ -687,4 +686,4 @@ class RubyHeapScanCommand(debugger.Command):
 
 
 # Register commands
-RubyHeapScanCommand()
+debugger.register("rb-heap-scan", RubyHeapScanHandler, usage=RubyHeapScanHandler.USAGE)

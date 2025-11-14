@@ -230,47 +230,23 @@ class RubyContext:
             pass
 
 
-class RubyContextCommand(debugger.Command):
-    """Show current execution context and set convenience variables.
+class RubyContextHandler:
+    """Show current execution context and set convenience variables."""
     
-    This command automatically discovers the current thread's execution context
-    and displays detailed information about it, while also setting up convenience
-    variables for easy inspection.
+    USAGE = command.Usage(
+        summary="Show current execution context and set convenience variables",
+        parameters=[],
+        options={},
+        flags=[],
+        examples=[
+            ("rb-context", "Display execution context info"),
+            ("rb-context; rb-print $errinfo", "Show context then print exception")
+        ]
+    )
     
-    Usage:
-        rb-context
-    
-    Displays:
-        - Execution context pointer and details
-        - VM stack information
-        - Control frame pointer
-        - Exception information (if any)
-    
-    Sets these convenience variables:
-        $ec       - Current execution context (rb_execution_context_t *)
-        $cfp      - Current control frame pointer
-        $errinfo  - Current exception (if any)
-    
-    Example:
-        (gdb) rb-context
-        Execution Context:
-          $ec = <rb_execution_context_t *@0x...>
-          VM Stack: <VALUE *@0x...> size=1024
-          $cfp = <rb_control_frame_t *@0x...>
-          Exception: None
-        
-        (gdb) rb-object-print $errinfo
-        (gdb) rb-object-print $ec->cfp->sp[-1]
-    """
-    
-    def __init__(self):
-        super(RubyContextCommand, self).__init__("rb-context", debugger.COMMAND_USER)
-    
-    def invoke(self, arg, from_tty):
+    def invoke(self, arguments, terminal):
         """Execute the rb-context command."""
         try:
-            terminal = format.create_terminal(from_tty)
-            
             # Get current execution context
             ctx = RubyContext.current()
             
@@ -314,30 +290,21 @@ class RubyContextCommand(debugger.Command):
             traceback.print_exc()
 
 
-class RubyContextStorageCommand(debugger.Command):
-    """Print the fiber storage from the current execution context.
+class RubyContextStorageHandler:
+    """Print the fiber storage from the current execution context."""
     
-    This command is a convenience wrapper around rb-object-print that
-    specifically prints $ec->storage (the inheritable fiber storage).
+    USAGE = command.Usage(
+        summary="Print fiber storage from current execution context",
+        parameters=[],
+        options={'depth': (int, 1, 'Recursion depth for nested objects')},
+        flags=[('debug', 'Show debug information')],
+        examples=[
+            ("rb-context-storage", "Print storage with default depth"),
+            ("rb-context-storage --depth 3", "Print storage with depth 3")
+        ]
+    )
     
-    Usage:
-        rb-context-storage [--depth N] [--debug]
-    
-    All flags are passed through to rb-object-print.
-    
-    Example:
-        (gdb) rb-context
-        (gdb) rb-context-storage --depth 3
-    
-    This is equivalent to:
-        (gdb) rb-context
-        (gdb) rb-object-print $ec->storage --depth 3
-    """
-    
-    def __init__(self):
-        super(RubyContextStorageCommand, self).__init__("rb-context-storage", debugger.COMMAND_USER)
-    
-    def invoke(self, arg, from_tty):
+    def invoke(self, arguments, terminal):
         """Execute the rb-context-storage command."""
         try:
             # Get current execution context
@@ -396,6 +363,5 @@ class RubyContextStorageCommand(debugger.Command):
 
 
 # Register commands
-RubyContextCommand()
-RubyContextStorageCommand()
-
+debugger.register("rb-context", RubyContextHandler, usage=RubyContextHandler.USAGE)
+debugger.register("rb-context-storage", RubyContextStorageHandler, usage=RubyContextStorageHandler.USAGE)

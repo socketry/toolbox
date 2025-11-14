@@ -220,22 +220,29 @@ class RubyFiber:
         print(terminal.print_type_tag('rb_control_frame_t', int(self.cfp), None))
 
 
-class RubyFiberScanHeapCommand(debugger.Command):
+class RubyFiberScanHeapHandler:
     """Scan heap and list all Ruby fibers."""
 
-    def __init__(self):
-        super(RubyFiberScanHeapCommand, self).__init__("rb-fiber-scan-heap", debugger.COMMAND_USER)
-        self.heap = heap.RubyHeap()
+    USAGE = command.Usage(
+        summary="Scan heap and list all Ruby fibers",
+        parameters=[],
+        options={
+            'limit': (int, None, 'Maximum fibers to find'),
+            'cache': (str, None, 'Cache file to use (default: fibers.json)')
+        },
+        flags=[
+            ('terminated', 'Include terminated fibers in results')
+        ],
+        examples=[
+            ("rb-fiber-scan-heap", "Find all non-terminated fibers"),
+            ("rb-fiber-scan-heap --limit 10", "Find first 10 fibers"),
+            ("rb-fiber-scan-heap --terminated", "Include terminated fibers"),
+            ("rb-fiber-scan-heap --cache my.json", "Use custom cache file")
+        ]
+    )
     
-    def usage(self):
-        """Print usage information."""
-        print("Usage: rb-fiber-scan-heap [--limit N] [--cache [filename]] [--terminated]")
-        print("Examples:")
-        print("  rb-fiber-scan-heap                    # Find all non-terminated fibers")
-        print("  rb-fiber-scan-heap --limit 10         # Find first 10 non-terminated fibers")
-        print("  rb-fiber-scan-heap --terminated       # Include terminated fibers")
-        print("  rb-fiber-scan-heap --cache            # Use fibers.json cache")
-        print("  rb-fiber-scan-heap --cache my.json    # Use custom cache file")
+    def __init__(self):
+        self.heap = heap.RubyHeap()
 
     def save_cache(self, fiber_values, filename):
         """Save fiber VALUE addresses to cache file.
@@ -474,29 +481,21 @@ class RubyFiberScanHeapCommand(debugger.Command):
         print()
 
 
-class RubyFiberScanSwitchCommand(debugger.Command):
-    """Switch to a fiber from the scan heap cache.
+class RubyFiberScanSwitchHandler:
+    """Switch to a fiber from the scan heap cache."""
 
-    Usage: rb-fiber-scan-switch <index>
-    Example: rb-fiber-scan-switch 0
-             rb-fiber-scan-switch 2
-    
-    Note: This command requires a fiber cache populated by 'rb-fiber-scan-heap'.
-    """
+    USAGE = command.Usage(
+        summary="Switch to a fiber from scan cache by index",
+        parameters=[('index', 'Fiber index from rb-fiber-scan-heap')],
+        options={},
+        flags=[],
+        examples=[
+            ("rb-fiber-scan-switch 0", "Switch to first fiber"),
+            ("rb-fiber-scan-switch 2", "Switch to third fiber")
+        ]
+    )
 
-    def __init__(self):
-        super(RubyFiberScanSwitchCommand, self).__init__("rb-fiber-scan-switch", debugger.COMMAND_USER)
-    
-    def usage(self):
-        """Print usage information."""
-        print("Usage: rb-fiber-scan-switch <index>")
-        print("Examples:")
-        print("  rb-fiber-scan-switch 0    # Switch to fiber #0")
-        print("  rb-fiber-scan-switch 2    # Switch to fiber #2")
-        print()
-        print("Note: Run 'rb-fiber-scan-heap' first to populate the fiber cache.")
-
-    def invoke(self, arg, from_tty):
+    def invoke(self, arguments, terminal):
         global _fiber_cache
 
         if not arg or not arg.strip():
@@ -650,42 +649,25 @@ if debugger.DEBUGGER_NAME == 'gdb':
             gdb.invalidate_cached_frames()
 
 
-class RubyFiberSwitchCommand(debugger.Command):
-    """Switch debugger's stack view to a specific fiber.
+class RubyFiberSwitchHandler:
+    """Switch debugger's stack view to a specific fiber."""
 
-    Usage: rb-fiber-switch <fiber_value_or_address>
-           rb-fiber-switch off
-
-    Examples: 
-        rb-fiber-switch 0x7fffdc409ca8    # VALUE address
-        rb-fiber-switch $fiber_val         # Debugger variable
-        rb-fiber-switch off                # Deactivate unwinder (GDB only)
-
-    This uses a custom unwinder (GDB only) to make the debugger follow the fiber's saved
-    stack, allowing you to use 'bt', 'up', 'down', 'frame', etc.
-    Works even with core dumps!
-
-    Based on technique from Facebook Folly fibers.
-    """
+    USAGE = command.Usage(
+        summary="Switch debugger stack view to a specific fiber",
+        parameters=[('fiber', 'Fiber VALUE/address or "off" to deactivate')],
+        options={},
+        flags=[],
+        examples=[
+            ("rb-fiber-switch 0x7fffdc409ca8", "Switch to fiber at address"),
+            ("rb-fiber-switch $fiber", "Switch using debugger variable"),
+            ("rb-fiber-switch off", "Deactivate unwinder (GDB only)")
+        ]
+    )
 
     def __init__(self):
-        super(RubyFiberSwitchCommand, self).__init__("rb-fiber-switch", debugger.COMMAND_USER)
         if debugger.DEBUGGER_NAME == 'gdb':
             self._ensure_unwinder()
     
-    def usage(self):
-        """Print usage information."""
-        print("Usage: rb-fiber-switch <fiber_value_or_address>")
-        print("       rb-fiber-switch off")
-        print("Examples:")
-        print("  rb-fiber-switch 0x7fffdc409ca8    # VALUE address")
-        print("  rb-fiber-switch $fiber             # Debugger variable")
-        print("  rb-fiber-switch off                # Deactivate unwinder (GDB only)")
-        print()
-        print("After switching, you can use: bt, up, down, frame, info locals, etc.")
-        if debugger.DEBUGGER_NAME != 'gdb':
-            print("Note: Stack unwinding is only supported in GDB")
-
     def _ensure_unwinder(self):
         """Ensure the fiber unwinder is registered (GDB only)."""
         global _fiber_unwinder
@@ -840,26 +822,20 @@ class RubyFiberSwitchCommand(debugger.Command):
         print("  rb-fiber-switch off")
 
 
-class RubyFiberScanStackTraceAllCommand(debugger.Command):
-    """Print stack traces for all fibers in the scan cache.
+class RubyFiberScanStackTraceAllHandler:
+    """Print stack traces for all fibers in the scan cache."""
 
-    Usage: rb-fiber-scan-stack-trace-all
+    USAGE = command.Usage(
+        summary="Print stack traces for all cached fibers",
+        parameters=[],
+        options={},
+        flags=[],
+        examples=[
+            ("rb-fiber-scan-heap; rb-fiber-scan-stack-trace-all", "Scan fibers then show all backtraces")
+        ]
+    )
 
-    This command prints the Ruby stack trace for each fiber that was
-    found by 'rb-fiber-scan-heap'. Run that command first to populate
-    the fiber cache.
-    """
-
-    def __init__(self):
-        super(RubyFiberScanStackTraceAllCommand, self).__init__("rb-fiber-scan-stack-trace-all", debugger.COMMAND_USER)
-    
-    def usage(self):
-        """Print usage information."""
-        print("Usage: rb-fiber-scan-stack-trace-all")
-        print()
-        print("Note: Run 'rb-fiber-scan-heap' first to populate the fiber cache.")
-
-    def invoke(self, arg, from_tty):
+    def invoke(self, arguments, terminal):
         global _fiber_cache
 
         # Check if cache is populated
@@ -895,7 +871,7 @@ class RubyFiberScanStackTraceAllCommand(debugger.Command):
 
 
 # Register commands
-RubyFiberScanHeapCommand()
-RubyFiberScanSwitchCommand()
-RubyFiberSwitchCommand()
-RubyFiberScanStackTraceAllCommand()
+debugger.register("rb-fiber-scan-heap", RubyFiberScanHeapHandler, usage=RubyFiberScanHeapHandler.USAGE)
+debugger.register("rb-fiber-scan-switch", RubyFiberScanSwitchHandler, usage=RubyFiberScanSwitchHandler.USAGE)
+debugger.register("rb-fiber-switch", RubyFiberSwitchHandler, usage=RubyFiberSwitchHandler.USAGE)
+debugger.register("rb-fiber-scan-stack-trace-all", RubyFiberScanStackTraceAllHandler, usage=RubyFiberScanStackTraceAllHandler.USAGE)

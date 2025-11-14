@@ -4,6 +4,7 @@ import debugger
 import sys
 
 # Import Ruby GDB modules
+import command
 import constants
 import context
 import format
@@ -546,44 +547,31 @@ class RubyStackPrinter:
             return f"<error:{e}>"
 
 
-class RubyStackTraceCommand(debugger.Command):
-    """Print combined C and Ruby backtrace for current fiber or thread.
+class RubyStackTraceHandler:
+    """Print combined C and Ruby backtrace for current fiber or thread."""
     
-    Usage: rb-stack-trace [--values]
-    
-    Shows backtrace for:
-    - Currently selected fiber (if rb-fiber-switch was used)
-    - Current thread execution context (if no fiber selected)
-    
-    Options:
-      --values    Show all Ruby VALUEs on each frame's stack pointer
-    
-    The output shows both C frames and Ruby frames intermixed,
-    giving a complete picture of the call stack.
-    """
+    USAGE = command.Usage(
+        summary="Print combined C and Ruby backtrace",
+        parameters=[],
+        options={},
+        flags=[('values', 'Show stack VALUEs in addition to backtrace')],
+        examples=[
+            ("rb-stack-trace", "Show backtrace for current fiber/thread"),
+            ("rb-stack-trace --values", "Show backtrace with stack VALUEs")
+        ]
+    )
     
     def __init__(self):
-        super(RubyStackTraceCommand, self).__init__("rb-stack-trace", debugger.COMMAND_USER)
         self.printer = RubyStackPrinter()
     
-    def usage(self):
-        """Print usage information."""
-        print("Usage: rb-stack-trace [--values]")
-        print("Examples:")
-        print("  rb-stack-trace              # Show backtrace for current fiber/thread")
-        print("  rb-stack-trace --values     # Show backtrace with stack VALUEs")
-    
-    
-    def invoke(self, arg, from_tty):
+    def invoke(self, arguments, terminal):
         """Execute the stack trace command."""
         try:
-            # Parse arguments
-            import command
-            arguments = command.parse_arguments(arg if arg else "")
+            # Get flags
             self.printer.show_values = arguments.has_flag('values')
             
-            # Create terminal for formatting
-            self.printer.terminal = format.create_terminal(from_tty)
+            # Set terminal for formatting
+            self.printer.terminal = terminal
             
             # Check if a fiber is currently selected
             # Import here to avoid circular dependency
@@ -628,4 +616,4 @@ class RubyStackTraceCommand(debugger.Command):
 
 
 # Register commands
-RubyStackTraceCommand()
+debugger.register("rb-stack-trace", RubyStackTraceHandler, usage=RubyStackTraceHandler.USAGE)
