@@ -1,15 +1,15 @@
 # Automatically generated context index for Utopia::Project guides.
 # Do not edit then files in this directory directly, instead edit the guides and then run `bake utopia:project:agent:context:update`.
 ---
-description: Ruby debugging extensions for GDB
+description: Ruby debugging toolbox for GDB and LLDB
 metadata:
-  documentation_uri: https://socketry.github.io/ruby-gdb/
-  source_code_uri: https://github.com/socketry/ruby-gdb
+  documentation_uri: https://socketry.github.io/toolbox/
+  source_code_uri: https://github.com/socketry/toolbox
 files:
 - path: getting-started.md
   title: Getting Started
-  description: This guide explains how to install and use Ruby GDB extensions for
-    debugging Ruby programs and core dumps.
+  description: This guide explains how to install and use Toolbox for debugging Ruby
+    programs and core dumps with GDB or LLDB.
 - path: object-inspection.md
   title: Object Inspection
   description: This guide explains how to use `rb-object-print` to inspect Ruby objects,

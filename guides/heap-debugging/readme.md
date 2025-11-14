@@ -30,12 +30,18 @@ Scan the heap for specific types of Ruby objects:
 
 ~~~
 (gdb) rb-heap-scan --type RUBY_T_STRING --limit 10
-Scanning heap for objects of type T_STRING...
-Found 10 objects:
-  Object #0: <VALUE:0x7f8a1c100000> T_STRING
-  Object #1: <VALUE:0x7f8a1c100100> T_STRING
+Scanning heap for type 0x05, limit=10...
+
+Found 10 object(s):
+
+  [0] $heap0 = <T_STRING@...> "..."
+  [1] $heap1 = <T_STRING@...> "..."
   ...
-$heap = 0x7f8a1c100900  # Last scanned object (for pagination)
+  [9] $heap9 = <T_STRING@...> "..."
+
+Objects saved in $heap0 through $heap9
+Next scan address saved to $heap: 0x...
+Run 'rb-heap-scan --from $heap ...' for next page
 ~~~
 
 ### Finding Fibers
@@ -48,7 +54,12 @@ Scanning heap for Fiber objects...
   Checked 45000 objects, found 12 fiber(s)...
 
 Found 12 fiber(s):
-  Fiber #0: <VALUE:0x7f8a1c800000>
+
+Fiber #0: <T_DATA@...> → <struct rb_fiber_struct@...>
+  Status: SUSPENDED
+  Stack: <void *@...>
+  VM Stack: <VALUE *@...>
+  CFP: <rb_control_frame_t@...>
   ...
 ~~~
 
@@ -90,11 +101,21 @@ Continue scanning from where you left off:
 
 ~~~
 (gdb) rb-heap-scan --type RUBY_T_STRING --limit 10
-... (finds 10 strings) ...
-$heap = 0x7f8a1c888888  # Last found object
+Scanning heap for type 0x05, limit=10...
+
+Found 10 object(s):
+  [0] $heap0 = <T_STRING@...> "..."
+  ...
+Objects saved in $heap0 through $heap9
+Next scan address saved to $heap: 0x...
 
 (gdb) rb-heap-scan --type RUBY_T_STRING --limit 10 --from $heap
-... (finds next 10 strings) ...
+Scanning heap for type 0x05, limit=10...
+Starting from saved position: 0x...
+
+Found 10 object(s):
+  [0] $heap0 = <T_STRING@...> "..."
+  ...
 ~~~
 
 ## Understanding Object Layout
@@ -364,14 +385,16 @@ Combine heap scanning with object inspection:
 
 ~~~
 (gdb) rb-heap-scan --type RUBY_T_HASH --limit 5
-Scanning heap for objects of type T_HASH...
-Found 5 objects:
-  Object #0: <VALUE:0x7f8a1c999999> T_HASH
-  Object #1: <VALUE:0x7f8a1c999aaa> T_HASH
+Scanning heap for type 0x08, limit=5...
+
+Found 5 object(s):
+
+  [0] $heap0 = <T_HASH@...>
+  [1] $heap1 = <T_HASH@...>
   ...
 
-(gdb) rb-object-print 0x7f8a1c999999 --depth 2
-<T_HASH@0x7f8a1c999999>
+(gdb) rb-object-print $heap0 --depth 2
+<T_HASH@...>
 [   0] K: <T_SYMBOL> :key
        V: <T_FIXNUM> 123
   ...

@@ -28,11 +28,13 @@ Scanning heap for Fiber objects...
 
 Found 12 fiber(s):
 
-Fiber #0: <VALUE:0x7f8a1c800000>
-  Status: RESUMED
-  Stack: 0x7f8a1d000000
+Fiber #0: <T_DATA@...> → <struct rb_fiber_struct@...>
+  Status: SUSPENDED
+  Stack: <void *@...>
+  VM Stack: <VALUE *@...>
+  CFP: <rb_control_frame_t@...>
   
-Fiber #1: <VALUE:0x7f8a1c800100>
+Fiber #1: <T_DATA@...> → <struct rb_fiber_struct@...>
   Status: SUSPENDED
   ...
 ~~~
@@ -75,18 +77,18 @@ See Ruby-level call stacks for all fibers at once:
 (gdb) rb-fiber-scan-stack-trace-all
 Found 12 fiber(s)
 
-Fiber #0: <VALUE:0x7f8a1c800000>
+Fiber #0: <T_DATA@...> → <struct rb_fiber_struct@...>
   Status: RESUMED
   [No backtrace - fiber is running]
 
-Fiber #1: <VALUE:0x7f8a1c800100>
+Fiber #1: <T_DATA@...> → <struct rb_fiber_struct@...>
   Status: SUSPENDED
   /app/lib/connection.rb:123:in `read'
   /app/lib/connection.rb:89:in `receive'
   /app/lib/server.rb:56:in `handle_client'
   ...
 
-Fiber #5: <VALUE:0x7f8a1c800500>
+Fiber #5: <T_DATA@...> → <struct rb_fiber_struct@...>
   Status: SUSPENDED  
   Exception: IOError: Connection reset
   /app/lib/connection.rb:45:in `write'
@@ -104,13 +106,20 @@ The most powerful feature: switch GDB's view to a fiber's stack (even in core du
 ~~~
 (gdb) rb-fiber-scan-heap
 (gdb) rb-fiber-scan-switch 5
-Switched to Fiber #5
+Switching to Fiber #5: VALUE 0x...
+Switched to Fiber: <T_DATA@...> → <struct rb_fiber_struct@...>
   Status: SUSPENDED
-  
-Now you can use standard GDB commands with this fiber's context:
-  rb-stack-trace      # Show combined backtrace
-  bt                  # Show C backtrace  
-  info locals         # Show C local variables
+
+Convenience variables set:
+  $fiber     = Current fiber VALUE
+  $fiber_ptr = Current fiber pointer (struct rb_fiber_struct *)
+  $ec        = Execution context (rb_execution_context_t *)
+  $errinfo   = Exception being handled (VALUE)
+
+Now try:
+  bt          # Show C backtrace of fiber
+  rb-stack-trace  # Show combined Ruby/C backtrace
+  info locals     # Show local variables
 ~~~
 
 After switching, all standard GDB commands work with the fiber's context:
@@ -145,147 +154,21 @@ Return to normal stack view:
 
 ## Analyzing Fiber State
 
-### VM Stack Inspection
-
-View the Ruby VM stack for a fiber:
+After switching to a fiber with `rb-fiber-scan-switch`, you can use standard GDB commands to inspect the fiber's state:
 
 ~~~
-(gdb) rb-fiber-vm-stack 5
-VM Stack for Fiber #5:
-  Base: 0x7f8a1c950000
-  Size: 4096 VALUEs (32768 bytes)
-  CFP:  0x7f8a1c951000
+(gdb) rb-fiber-scan-switch 5
+(gdb) bt                    # Show C backtrace
+(gdb) frame <n>             # Switch to specific frame
+(gdb) info locals           # Show local variables
+(gdb) rb-object-print $errinfo  # Print exception if present
 ~~~
 
-### VM Control Frames
-
-Walk through each Ruby method frame:
-
-~~~
-(gdb) rb-fiber-vm-frames 5
-VM Control Frames for Fiber #5:
-  ...
-
-Frame #0 (depth 45):
-  CFP Address: 0x7f8a1c951000
-  PC:         0x7f8a1c234500
-  SP:         0x7f8a1c950100
-  Location:   /app/lib/connection.rb:123
-  Method:     read
-  Frame Type: VM_FRAME_MAGIC_METHOD
-  Stack Depth: 256 slots
-~~~
-
-### Stack Top Values
-
-See what's on top of the VM stack:
-
-~~~
-(gdb) rb-fiber-stack-top 5 20
-VM Stack Top for Fiber #5:
-
-Top 20 VALUE(s) on stack (newest first):
-
-  [ -1] 0x00007f8a1c888888  T_STRING      "Hello"
-  [ -2] 0x0000000000000015  Fixnum(10)    Fixnum: 10
-  [ -3] 0x00007f8a1c999999  T_HASH        <hash:0x7f8a1c999999>
-  ...
-~~~
-
-## Diagnosing Crashes
-
-When Ruby crashes, find out why:
-
-~~~
-(gdb) rb-diagnose-exit
-================================================================================
-DIAGNOSING RUBY EXIT/CRASH
-================================================================================
-
-[1] Main Thread Exception:
---------------------------------------------------------------------------------
-  Main thread has exception: NoMethodError
-  VALUE: 0x7f8a1c777777
-  Use: rb-object-print (VALUE)0x7f8a1c777777
-
-[2] Fibers with Exceptions:
---------------------------------------------------------------------------------
-  Fiber #5 (SUSPENDED): RuntimeError
-    Fiber: 0x7f8a1c800500, errinfo: 0x7f8a1c666666
-  Fiber #8 (SUSPENDED): IOError
-    Fiber: 0x7f8a1c800800, errinfo: 0x7f8a1c555555
-
-[3] Interrupt Flags:
---------------------------------------------------------------------------------
-  interrupt_flag: 0x00000002
-  interrupt_mask: 0x00000000
-  WARNING: Interrupts pending!
-    - TRAP
-
-[4] Signal Information (from core dump):
---------------------------------------------------------------------------------
-  Program terminated with signal SIGSEGV, Segmentation fault.
-...
-~~~
-
-This comprehensive overview helps quickly identify the root cause.
-
-## Advanced Techniques
-
-### Finding Fibers by Stack Address
-
-If you know a stack address, find the owning fiber:
-
-~~~
-(gdb) info frame
-... rsp = 0x7f8a1e000500 ...
-
-(gdb) rb-fiber-from-stack 0x7f8a1e000000
-Searching for fiber with stack base 0x7f8a1e000000...
-
-Found fiber: 0x7f8a1c800300
-  Status: SUSPENDED
-  Stack: base=0x7f8a1e000000, size=1048576
-~~~
-
-### Searching Fibers by Function
-
-Find which fibers are blocked in a specific C function:
-
-~~~
-(gdb) rb-fiber-c-stack-search pthread_cond_wait
-Scanning 12 fiber(s)...
-
-  Match: Fiber #3 - found at 0x7f8a1e000450
-  Match: Fiber #7 - found at 0x7f8a1e100780
-
-Search complete: 2 fiber(s) matched.
-~~~
-
-Use this to find all fibers waiting on locks or I/O.
-
-### Debug Unwinder Issues
-
-If fiber switching doesn't work as expected:
-
-~~~
-(gdb) rb-fiber-debug-unwind 5
-Debug unwinding for Fiber #5: 0x7f8a1c800500
-
-Coroutine context:
-  fiber->context.stack_pointer = 0x7f8a1e000480
-
-Saved registers on coroutine stack:
-  [0x7f8a1e000480+0]  = R15: 0x0000000000000000
-  [0x7f8a1e000480+8]  = R14: 0x00007f8a1c567890
-  ...
-  [0x7f8a1e000480+48] = RIP: 0x00007f8a1ab12345
-
-Validation:
-  ✓ RIP looks like a valid code address
-    Symbol: fiber_setcontext + 123
-  ✓ RSP is within fiber's stack range
-~~~
+The fiber switch command sets up several convenience variables:
+- `$fiber` - The fiber VALUE
+- `$fiber_ptr` - Pointer to `struct rb_fiber_struct`
+- `$ec` - The fiber's execution context
+- `$errinfo` - Exception being handled (if any)
 
 ## Best Practices
 
@@ -306,10 +189,10 @@ The cache persists throughout your GDB session.
 CREATED and TERMINATED fibers may not have valid saved contexts. The scan output shows status:
 
 ~~~
-Fiber #5: <VALUE:0x7f8a1c800500>
+Fiber #5: <T_DATA@...> → <struct rb_fiber_struct@...>
   Status: TERMINATED           # Won't have useful context
   
-Fiber #3: <VALUE:0x7f8a1c800300>
+Fiber #3: <T_DATA@...> → <struct rb_fiber_struct@...>
   Status: SUSPENDED            # Good candidate for inspection
 ~~~
 

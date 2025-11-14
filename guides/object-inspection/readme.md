@@ -62,9 +62,9 @@ For hashes with fewer than 8 entries, Ruby uses an array-based implementation:
 
 ~~~
 (gdb) rb-object-print $some_hash
-<T_HASH@0x7f8a1c123456>
+<T_HASH@...>
 [   0] K: <T_SYMBOL> :name
-       V: <T_STRING@0x7f8a1c111111> 'Alice'
+       V: <T_STRING@...> "Alice"
 [   1] K: <T_SYMBOL> :age
        V: <T_FIXNUM> 30
 [   2] K: <T_SYMBOL> :active
@@ -77,11 +77,11 @@ For larger hashes, Ruby uses a hash table (output format is similar):
 
 ~~~
 (gdb) rb-object-print $large_hash
-<T_HASH@0x7f8a1c789abc>
+<T_HASH@...>
 [   0] K: <T_SYMBOL> :user_id
        V: <T_FIXNUM> 12345
 [   1] K: <T_SYMBOL> :session_data
-       V: <T_STRING@0x7f8a1c222222> '...'
+       V: <T_STRING@...> "..."
   ...
 ~~~
 
@@ -91,16 +91,16 @@ Prevent overwhelming output from deeply nested structures:
 
 ~~~
 (gdb) rb-object-print $nested_hash --depth 1   # Only top level
-<T_HASH@0x7f8a1c123456>
+<T_HASH@...>
 [   0] K: <T_SYMBOL> :data
-       V: <T_HASH@0x7f8a1c234567>  # Nested hash not expanded
+       V: <T_HASH@...>  # Nested hash not expanded
 
 (gdb) rb-object-print $nested_hash --depth 2   # Expand one level
-<T_HASH@0x7f8a1c123456>
+<T_HASH@...>
 [   0] K: <T_SYMBOL> :data
-       V: <T_HASH@0x7f8a1c234567>
+       V: <T_HASH@...>
        [   0] K: <T_SYMBOL> :nested_key
-              V: <T_STRING@0x7f8a1c345678> 'value'
+              V: <T_STRING@...> "value"
 ~~~
 
 At depth 1, nested structures show their type and address but aren't expanded. Increase depth to expand them.
@@ -115,7 +115,7 @@ Arrays display their elements with type information:
 
 ~~~
 (gdb) rb-object-print $array
-<T_ARRAY@0x7f8a1c234567>
+<T_ARRAY@...>
 [   0] <T_FIXNUM> 1
 [   1] <T_FIXNUM> 2
 [   2] <T_FIXNUM> 3
@@ -125,9 +125,9 @@ For arrays with nested objects:
 
 ~~~
 (gdb) rb-object-print $array --depth 2
-<T_ARRAY@0x7f8a1c345678>
-[   0] <T_STRING@0x7f8a1c111111> 'first item'
-[   1] <T_HASH@0x7f8a1c222222>
+<T_ARRAY@...>
+[   0] <T_STRING@...> "first item"
+[   1] <T_HASH@...>
 [   0] K: <T_SYMBOL> :key
        V: <T_FIXNUM> 123
   ...
@@ -139,10 +139,10 @@ Ruby Struct objects work similarly to arrays:
 
 ~~~
 (gdb) rb-object-print $struct_instance
-<T_STRUCT@0x7f8a1c456789>
-[   0] <T_STRING@0x7f8a1c111111> 'John'
+<T_STRUCT@...>
+[   0] <T_STRING@...> "John"
 [   1] <T_FIXNUM> 25
-[   2] <T_STRING@0x7f8a1c222222> 'Engineer'
+[   2] <T_STRING@...> "Engineer"
 [   3] <T_TRUE>
 ~~~
 
@@ -153,13 +153,12 @@ Ruby Struct objects work similarly to arrays:
 When a fiber has an exception, inspect it:
 
 ~~~
-(gdb) rb-scan-fibers
-(gdb) rb-fiber 5              # Shows fiber with exception
-(gdb) set $ec = ...           # (shown in output)
-(gdb) rb-object-print $ec->errinfo --depth 3
+(gdb) rb-fiber-scan-heap
+(gdb) rb-fiber-scan-switch 5  # Switch to fiber #5
+(gdb) rb-object-print $errinfo --depth 3
 ~~~
 
-This reveals the full exception structure including any nested causes.
+This reveals the full exception structure including any nested causes. After switching to a fiber, `$errinfo` and `$ec` convenience variables are automatically set.
 
 ### Inspecting Method Arguments
 
@@ -177,8 +176,8 @@ Break at a method and examine arguments on the stack:
 Thread-local variables are stored in fiber storage:
 
 ~~~
-(gdb) rb-scan-fibers
-(gdb) rb-fiber 0
+(gdb) rb-fiber-scan-heap
+(gdb) rb-fiber-scan-switch 0
 (gdb) rb-object-print $ec->storage --depth 2
 ~~~
 

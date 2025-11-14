@@ -165,9 +165,9 @@ Ruby hashes and arrays can contain nested structures:
 
 ~~~
 (gdb) rb-object-print $some_hash --depth 2
-<T_HASH@0x7f8a1c999999>
+<T_HASH@...>
 [   0] K: <T_SYMBOL> :name
-       V: <T_STRING@0x7f8a1c888888> 'Alice'
+       V: <T_STRING@...> "Alice"
 [   1] K: <T_SYMBOL> :age
        V: <T_FIXNUM> 30
 ~~~

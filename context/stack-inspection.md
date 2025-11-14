@@ -86,44 +86,19 @@ For advanced debugging, you can inspect the raw VM frames:
 
 ## Inspecting C Stacks
 
-### C Stack Information
+### C Backtrace with GDB
 
-View native stack details for a fiber:
-
-~~~
-(gdb) rb-fiber-c-stack 5
-C/Machine Stack for Fiber #5:
-  Fiber: 0x7f8a1c800500
-  Stack Base:    0x7f8a1e000000
-  Stack Size:    1048576 bytes
-  Stack Start:   0x7f8a1e000000
-  Stack End:     0x7f8a1e0f0000
-  Stack Used:    983040 bytes (grows down)
-~~~
-
-### Walking C Frames
-
-Attempt to walk the native call stack:
+After switching to a fiber, use standard GDB commands to inspect the C stack:
 
 ~~~
-(gdb) rb-fiber-c-frames 5
-C/Native Stack Frames for Fiber #5:
-  ...
-
-Frame #0: (initial context)
-  SP: 0x7f8a1e0f0000
-
-Frame #1:
-  FP: 0x7f8a1e0f0010
-  Return Address: 0x7f8a1ab12345 - fiber_setcontext
-
-Frame #2:
-  FP: 0x7f8a1e0f0080
-  Return Address: 0x7f8a1ab12400 - rb_fiber_yield
-...
+(gdb) rb-fiber-scan-switch 5
+(gdb) bt                    # Show C backtrace
+(gdb) frame 2               # Switch to specific frame
+(gdb) info args             # Show function arguments
+(gdb) info locals           # Show local variables
 ~~~
 
-Note: For suspended fibers, this may be incomplete. Use `rb-fiber-switch` for accurate C backtraces.
+The fiber unwinder automatically integrates with GDB's backtrace functionality, so `bt` shows the correct C stack for the selected fiber.
 
 ## Practical Examples
 
